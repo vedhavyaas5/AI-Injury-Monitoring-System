@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+:root {
+  --bg-base:    #0a0e1a;
+  --bg-card:    #111827;
+  --bg-card2:   #1a2235;
+  --border:     #1e2d45;
+  --text-primary:   #f0f4ff;
+  --text-secondary: #8899bb;
+  --accent-blue:  #3b82f6;
+  --accent-green: #10b981;
+  --accent-yellow:#f59e0b;
+  --accent-red:   #ef4444;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: #1e2d45; border-radius: 2px; }
+
+/* Glass card */
+.glass {
+  background: rgba(17, 24, 39, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+/* Status pulse */
+@keyframes pulse-green {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); }
+  50%       { box-shadow: 0 0 0 6px rgba(16,185,129,0); }
+}
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
+  50%       { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+}
+.pulse-green { animation: pulse-green 2s infinite; }
+.pulse-red   { animation: pulse-red   1s infinite; }
+
+/* Demo badge */
+.demo-badge {
+  background: rgba(245,158,11,0.15);
+  border: 1px solid rgba(245,158,11,0.4);
+  color: #f59e0b;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
