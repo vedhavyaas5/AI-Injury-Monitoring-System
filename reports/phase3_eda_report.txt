@@ -1,0 +1,159 @@
+
+╔══════════════════════════════════════════════════════════════╗
+║        PHASE 3 — EDA & PREPROCESSING REPORT                 ║
+║        Real-Time Sports Injury Monitoring System             ║
+╚══════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  DATASET SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Physical Movement Injury Dataset
+    Rows    : 1000
+    Columns : 14  (9 original + 4 engineered = 13 features + 1 target)
+
+  Sensor-Based Injury Dataset
+    Rows    : 1000
+    Columns : 13  (8 original + 4 engineered = 12 features + 1 target)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  DATA QUALITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Missing values (both datasets)  : 0
+  Duplicate records removed       : 0
+  Infinite values                 : 0
+  Data type issues                : None
+  Constant columns                : None
+  Physically unrealistic values   : None found outside expected physiological ranges
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  CLASS DISTRIBUTION (TARGET VARIABLES)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Physical Movement — injury_risk
+    Class 0 (No Injury) :   949  (94.9%)
+    Class 1 (Injury)    :    51  (5.1%)
+    Status              : HIGHLY IMBALANCED (~19:1 ratio)
+
+  Sensor-Based — injury_event
+    Class 0 (No Injury) :   984  (98.4%)
+    Class 1 (Injury)    :    16  (1.6%)
+    Status              : HIGHLY IMBALANCED (~62:1 ratio)
+
+  → Mitigation: class_weight='balanced', stratified splits, SMOTE on train only,
+    AUC-ROC/F1 as primary evaluation metrics.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  OUTLIERS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Outliers detected via IQR method in several features.
+  RETAINED — extreme values represent genuine high-intensity sport conditions
+  (e.g., high GRF during jumping, HR near 180 bpm in sprint intervals).
+  Removing them would bias models against detecting real injury-risk events.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  IMPORTANT CORRELATIONS (with target)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Physical Movement  → features with highest linear correlation to injury_risk
+  Sensor-Based       → features with highest linear correlation to injury_event
+  Note: Tree-based models can capture non-linear relationships missed by Pearson r.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  FEATURE ENGINEERING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Physical Movement (4 new features):
+    movement_intensity          = angular_velocity × linear_acceleration
+    biomechanical_risk_index    = 0.5×postural_instability + 0.5×biomechanical_deviation
+    movement_asymmetry          = |hip_flexion_angle − knee_flexion_angle|
+    fatigue_grf_interaction     = fatigue_level × ground_reaction_force
+
+  Sensor-Based (4 new features):
+    fatigue_adjusted_load       = training_load × (1 + sensor_fatigue_index)
+    physiological_stress_score  = 0.4×HR_norm + 0.3×(1−SpO2_norm) + 0.3×stress_index
+    recovery_index              = hydration_level × (1 − stress_index)
+    cardiovascular_load         = heart_rate_bpm × training_load
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SELECTED FEATURES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Physical Movement top features (by avg rank across MI, RF, XGB):
+    ['fatigue_grf_interaction', 'ground_reaction_force', 'biomechanical_deviation_score', 'fatigue_level', 'ankle_rotation_angle', 'biomechanical_risk_index', 'hip_flexion_angle', 'angular_velocity', 'linear_acceleration', 'movement_intensity']
+
+  Sensor-Based top features:
+    ['muscle_activation_emg', 'heart_rate_bpm', 'sensor_fatigue_index', 'physiological_stress_score', 'hydration_level', 'cardiovascular_load', 'skin_temperature_celsius', 'fatigue_adjusted_load', 'stress_index', 'training_load']
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  TRAIN / VALIDATION / TEST SIZES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Physical Movement
+    Train : 700 samples  (70.0%)
+    Val   : 150 samples   (15.0%)
+    Test  : 150 samples   (15.0%)
+
+  Sensor-Based
+    Train : 700 samples  (70.0%)
+    Val   : 150 samples   (15.0%)
+    Test  : 150 samples   (15.0%)
+
+  Stratified splits ensure injury-positive class proportion is preserved.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  MULTICOLLINEARITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  No strong multicollinearity (|r| > 0.7) detected between independent
+  predictor pairs in either dataset at the original feature level.
+  Engineered composite features may carry moderate correlation with their
+  parent features — acceptable for tree-based models; monitored for linear models.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SAVED FILES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  processed/
+    physical_movement_clean.csv
+    sensor_data_clean.csv
+    X_train/val/test_movement.csv  (+ scaled variants)
+    y_train/val/test_movement.csv
+    X_train/val/test_sensor.csv    (+ scaled variants)
+    y_train/val/test_sensor.csv
+
+  models/preprocessors/
+    pm_standard_scaler.pkl   pm_minmax_scaler.pkl
+    sb_standard_scaler.pkl   sb_minmax_scaler.pkl
+    pm_feature_columns.pkl   sb_feature_columns.pkl
+
+  reports/
+    class_distribution.png
+    feature_distributions.png
+    correlation_matrix.png
+    feature_vs_injury.png
+    feature_importance.png
+    (+ additional per-dataset detail images)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PHASE 3 CONCLUSION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Both datasets are clean, complete, and free of missing or duplicate values.
+  Class imbalance is the primary challenge (≈19:1 and ≈62:1 ratios).
+
+  Physical Movement — Key injury predictors:
+    fatigue_level, ground_reaction_force, biomechanical_deviation_score,
+    postural_instability_index, knee_flexion_angle, and the engineered
+    fatigue_grf_interaction and biomechanical_risk_index features.
+
+  Sensor-Based — Key injury predictors:
+    training_load, sensor_fatigue_index, heart_rate_bpm, stress_index,
+    and the engineered fatigue_adjusted_load, cardiovascular_load, and
+    physiological_stress_score features.
+
+  The processed splits are ready for:
+    Phase 4 → Physical Movement ML Model
+              (Random Forest, XGBoost, SVM, Logistic Regression)
+    Phase 5 → Sensor-Based ML Model
+              (Same model suite, then a fusion/ensemble layer)
+
+  Preprocessing objects (scalers) are serialised so that real-time
+  inference applies identical transformations to live sensor data.
+
+═══════════════════════════════════════════════════════════════
+  RAW DATA → CLEAN DATA → EDA → FEATURE ANALYSIS
+  → FEATURE ENGINEERING → FEATURE SELECTION
+  → TRAIN / VALIDATION / TEST → READY FOR MODEL TRAINING ✓
+═══════════════════════════════════════════════════════════════

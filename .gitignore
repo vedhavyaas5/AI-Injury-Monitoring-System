@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# PyTorch model checkpoints (large binaries — keep only final .pth)
+models/mri_SimpleCNN_checkpoint.pth
+models/mri_MobileNetV2_checkpoint.pth
+models/mri_ResNet18_checkpoint.pth
+models/mri_EfficientNet-B0_checkpoint.pth
+
+# Torch hub cache
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Large dataset raw images are tracked (small dataset, 56 webp files)
+# Processed CSVs are tracked for reproducibility
