@@ -1,0 +1,2053 @@
+
+################################################################################
+#                                                                              #
+#                  REAL-TIME SPORTS INJURY MONITORING SYSTEM                   #
+#                 COMPLETE MODEL TRAINING & EVALUATION OUTPUT                  #
+#                                                                              #
+#                       Generated: 2026-09-08  18:30:38                        #
+#                                Python: 3.13.4                                #
+#                                                                              #
+################################################################################
+
+Contents of this file:
+  1. PHASE 3  — Data Quality Analysis, EDA, Feature Engineering,
+                Feature Selection, Train/Val/Test Split Reports
+  2. PHASE 4  — Physical Movement ML Models:
+                Logistic Regression, Decision Tree, Random Forest, SVM, XGBoost
+                (hyperparameter tuning, validation metrics, test metrics,
+                 confusion matrices, feature importance, ROC-AUC)
+  3. PHASE 5  — Sensor-Based ML Models:
+                Logistic Regression, Decision Tree, Random Forest, SVM, XGBoost
+                (same evaluation suite as Phase 4)
+  4. PHASE 6  — MRI Deep Learning (CNN / Transfer Learning):
+                SimpleCNN, MobileNetV2, ResNet18, EfficientNet-B0
+                (every epoch training loss, validation loss, accuracy,
+                 early stopping events, learning rate schedule,
+                 test evaluation, confusion matrices, Grad-CAM)
+
+IMPORTANT NOTES:
+  - Phase 6 uses PSEUDO-LABELS because the MRI dataset has no real labels.
+    The DL metrics in Phase 6 carry NO clinical meaning.
+    They validate that the training pipeline runs correctly end-to-end.
+  - Phase 3/4/5 metrics are computed on real labelled tabular data.
+
+################################################################################
+
+
+================================================================================
+================================================================================
+  PHASE 3 — Data Preprocessing & EDA
+  Script : phase3_eda_preprocessing.py
+  Start  : 2026-09-08  18:30:38
+================================================================================
+================================================================================
+
+
+════════════════════════════════════════════════════════════
+  1. LOADING DATASETS
+════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────
+  Dataset: Physical Movement Injury Dataset
+────────────────────────────────────────────────────────────
+  Rows              : 1000
+  Columns           : 10
+  Column names      : ['hip_flexion_angle', 'knee_flexion_angle', 'ankle_rotation_angle', 'angular_velocity', 'linear_acceleration', 'ground_reaction_force', 'postural_instability_index', 'biomechanical_deviation_score', 'fatigue_level', 'injury_risk']
+
+  Data types:
+hip_flexion_angle                float64
+knee_flexion_angle               float64
+ankle_rotation_angle             float64
+angular_velocity                 float64
+linear_acceleration              float64
+ground_reaction_force            float64
+postural_instability_index       float64
+biomechanical_deviation_score    float64
+fatigue_level                    float64
+injury_risk                        int64
+
+  First 5 rows:
+   hip_flexion_angle  knee_flexion_angle  ankle_rotation_angle  angular_velocity  linear_acceleration  ground_reaction_force  postural_instability_index  biomechanical_deviation_score  fatigue_level  injury_risk
+0          57.454012           52.215951            -21.446488          4.199866             8.622739            1680.906561                    0.648257                       0.038799       0.720268            0
+1         115.071431           95.028114            -22.771908          4.881748            12.100942            1920.306978                    0.172386                       0.186773       0.687283            0
+2          93.199394          134.753500             36.562912          1.877573            11.426398            3063.642180                    0.872395                       0.831246       0.095754            0
+3          79.865848          117.866986            -22.540842          3.936808             2.393109            1520.013158                    0.613116                       0.766768       0.922572            0
+4          35.601864          126.787338            -20.524525          3.644603             2.323817            3108.949054                    0.157204                       0.350643       0.568472            0
+
+  Last 5 rows:
+     hip_flexion_angle  knee_flexion_angle  ankle_rotation_angle  angular_velocity  linear_acceleration  ground_reaction_force  postural_instability_index  biomechanical_deviation_score  fatigue_level  injury_risk
+995          29.158207          108.834619             32.876618          2.931589            13.471220            2553.306083                    0.579737                       0.273160       0.514929            0
+996         111.731358          144.793755            -30.845411          2.339206             1.878777            2009.661245                    0.667037                       0.209519       0.165370            0
+997          33.681863           38.274962            -17.119093          2.670148             4.984858            2795.446550                    0.911577                       0.455329       0.977713            0
+998         115.023735           36.846567            -18.895902          3.414673            12.254606            1955.871902                    0.345620                       0.908438       0.107925            0
+999          64.600577           63.862449             33.427263          1.387520             8.999954             948.144909                    0.621507                       0.104480       0.931944            0
+
+  Statistical summary:
+       hip_flexion_angle  knee_flexion_angle  ankle_rotation_angle  angular_velocity  linear_acceleration  ground_reaction_force  postural_instability_index  biomechanical_deviation_score  fatigue_level  injury_risk
+count          1000.0000           1000.0000             1000.0000         1000.0000            1000.0000              1000.0000                   1000.0000                      1000.0000      1000.0000    1000.0000
+mean             69.0257             90.8421                0.2165            3.1971               7.4622              1995.3935                      0.4933                         0.4824         0.4865       0.0510
+std              29.2137             35.0628               26.1607            1.5757               4.2735               867.5844                      0.2897                         0.2849         0.2822       0.2201
+min              20.4632             30.3862              -44.9990            0.5036               0.1005               518.5515                      0.0014                         0.0002         0.0002       0.0000
+25%              43.5973             58.9289              -21.4784            1.8305               3.7501              1248.1400                      0.2402                         0.2360         0.2494       0.0000
+50%              69.6807             92.2481                0.0553            3.1635               7.4695              1971.2084                      0.4846                         0.4840         0.4787       0.0000
+75%              94.4320            121.2558               23.3193            4.5565              11.1259              2719.5553                      0.7565                         0.7145         0.7159       0.0000
+max             119.9718            149.9296               44.8039            5.9976              14.9665              3498.0509                      0.9995                         0.9989         0.9960       1.0000
+
+────────────────────────────────────────────────────────────
+  Dataset: Sensor-Based Injury Dataset
+────────────────────────────────────────────────────────────
+  Rows              : 1000
+  Columns           : 9
+  Column names      : ['heart_rate_bpm', 'oxygen_saturation_spo2', 'skin_temperature_celsius', 'muscle_activation_emg', 'training_load', 'hydration_level', 'stress_index', 'sensor_fatigue_index', 'injury_event']
+
+  Data types:
+heart_rate_bpm              float64
+oxygen_saturation_spo2      float64
+skin_temperature_celsius    float64
+muscle_activation_emg       float64
+training_load               float64
+hydration_level             float64
+stress_index                float64
+sensor_fatigue_index        float64
+injury_event                  int64
+
+  First 5 rows:
+   heart_rate_bpm  oxygen_saturation_spo2  skin_temperature_celsius  muscle_activation_emg  training_load  hydration_level  stress_index  sensor_fatigue_index  injury_event
+0      178.333032               93.736408                 35.198183               0.688876     488.442937         0.073175      0.499670              0.004402             0
+1      125.923665               93.329121                 32.827393               0.172029      57.727846         0.089478      0.746747              0.000330             0
+2      152.862887               91.761539                 35.547457               0.318097     476.443244         0.651974      0.562667              0.472263             0
+3      113.866520               96.072667                 33.888714               0.796311     215.904841         0.486941      0.083303              0.029294             0
+4      140.054668               94.766242                 32.314093               0.575817      54.540682         0.790415      0.185580              0.974533             0
+
+  Last 5 rows:
+     heart_rate_bpm  oxygen_saturation_spo2  skin_temperature_celsius  muscle_activation_emg  training_load  hydration_level  stress_index  sensor_fatigue_index  injury_event
+995      170.783558               93.594450                 32.027867               0.946211     240.952163         0.650883      0.007591              0.317082             0
+996      176.163693               99.267075                 37.242012               0.723618     462.061108         0.177798      0.572671              0.536056             0
+997      182.805569               96.986570                 33.843951               0.880857     274.072124         0.051240      0.717187              0.661191             0
+998      108.660879               92.571771                 37.631533               0.429811     229.476477         0.682962      0.745080              0.703485             0
+999       84.313955               95.640849                 33.901672               0.138892     387.675017         0.251079      0.904977              0.136755             0
+
+  Statistical summary:
+       heart_rate_bpm  oxygen_saturation_spo2  skin_temperature_celsius  muscle_activation_emg  training_load  hydration_level  stress_index  sensor_fatigue_index  injury_event
+count       1000.0000               1000.0000                 1000.0000              1000.0000      1000.0000        1000.0000     1000.0000             1000.0000     1000.0000
+mean         122.0673                 95.0569                   35.0315                 0.5477       272.1311           0.5049        0.4910                0.5121        0.0160
+std           38.0907                  2.8645                    1.7770                 0.2590       132.2598           0.2898        0.2908                0.2880        0.1255
+min           55.0071                 90.0094                   32.0009                 0.1011        50.6001           0.0013        0.0003                0.0003        0.0000
+25%           90.6595                 92.5263                   33.5206                 0.3231       155.6748           0.2547        0.2369                0.2705        0.0000
+50%          121.8502                 95.0637                   34.9667                 0.5409       267.0937           0.5010        0.4923                0.5230        0.0000
+75%          154.3893                 97.5670                   36.6420                 0.7779       388.4392           0.7685        0.7468                0.7502        0.0000
+max          189.9332                 99.9967                   37.9960                 0.9988       499.4802           0.9998        0.9999                0.9991        1.0000
+
+════════════════════════════════════════════════════════════
+  2. DATA QUALITY ANALYSIS
+════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────
+  Quality Report — Physical Movement
+────────────────────────────────────────────────────────────
+
+  DATA QUALITY REPORT
+  ────────────────────────────────────────────────────────────
+  Rows                 : 1000
+  Columns              : 10
+  Missing values       : 0
+  Duplicate rows       : 0
+  Infinite values      : 0
+  Numerical columns    : 10
+  Categorical columns  : 0
+  Constant columns     : None
+  ────────────────────────────────────────────────────────────
+  Missing per column:
+hip_flexion_angle                0
+knee_flexion_angle               0
+ankle_rotation_angle             0
+angular_velocity                 0
+linear_acceleration              0
+ground_reaction_force            0
+postural_instability_index       0
+biomechanical_deviation_score    0
+fatigue_level                    0
+injury_risk                      0
+  ────────────────────────────────────────────────────────────
+  Unique values per column:
+hip_flexion_angle                1000
+knee_flexion_angle               1000
+ankle_rotation_angle             1000
+angular_velocity                 1000
+linear_acceleration              1000
+ground_reaction_force            1000
+postural_instability_index       1000
+biomechanical_deviation_score    1000
+fatigue_level                    1000
+injury_risk                         2
+  ────────────────────────────────────────────────────────────
+  Columns with negative values : {'ankle_rotation_angle': np.int64(498)}
+  ────────────────────────────────────────────────────────────
+
+  Physically unrealistic value checks:
+    ✓ OK  hip_flexion_angle (expected -30 to 140): 0 records
+    ✓ OK  knee_flexion_angle (expected 0 to 160): 0 records
+    ✓ OK  fatigue_level (expected 0-1): 0 records
+
+────────────────────────────────────────────────────────────
+  Quality Report — Sensor-Based
+────────────────────────────────────────────────────────────
+
+  DATA QUALITY REPORT
+  ────────────────────────────────────────────────────────────
+  Rows                 : 1000
+  Columns              : 9
+  Missing values       : 0
+  Duplicate rows       : 0
+  Infinite values      : 0
+  Numerical columns    : 9
+  Categorical columns  : 0
+  Constant columns     : None
+  ────────────────────────────────────────────────────────────
+  Missing per column:
+heart_rate_bpm              0
+oxygen_saturation_spo2      0
+skin_temperature_celsius    0
+muscle_activation_emg       0
+training_load               0
+hydration_level             0
+stress_index                0
+sensor_fatigue_index        0
+injury_event                0
+  ────────────────────────────────────────────────────────────
+  Unique values per column:
+heart_rate_bpm              1000
+oxygen_saturation_spo2      1000
+skin_temperature_celsius    1000
+muscle_activation_emg       1000
+training_load               1000
+hydration_level             1000
+stress_index                1000
+sensor_fatigue_index        1000
+injury_event                   2
+  ────────────────────────────────────────────────────────────
+  Columns with negative values : None found
+  ────────────────────────────────────────────────────────────
+
+  Physically unrealistic value checks:
+    ✓ OK  heart_rate_bpm (expected 40-220): 0 records
+    ✓ OK  oxygen_saturation_spo2 (expected 85-100): 0 records
+    ✓ OK  skin_temperature_celsius (expected 25-42): 0 records
+    ✓ OK  hydration_level (expected 0-1): 0 records
+
+════════════════════════════════════════════════════════════
+  3. MISSING VALUE TREATMENT
+════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────
+  Physical Movement
+────────────────────────────────────────────────────────────
+  Missing values BEFORE: 0
+  Missing values AFTER : 0
+  Strategy: Median for numerical | Mode for categorical
+
+────────────────────────────────────────────────────────────
+  Sensor-Based
+────────────────────────────────────────────────────────────
+  Missing values BEFORE: 0
+  Missing values AFTER : 0
+  Strategy: Median for numerical | Mode for categorical
+
+════════════════════════════════════════════════════════════
+  4. DUPLICATE REMOVAL
+════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────
+  Physical Movement
+────────────────────────────────────────────────────────────
+  Duplicate records before : 0
+  Duplicate records removed: 0
+  Records after cleaning   : 1000
+
+────────────────────────────────────────────────────────────
+  Sensor-Based
+────────────────────────────────────────────────────────────
+  Duplicate records before : 0
+  Duplicate records removed: 0
+  Records after cleaning   : 1000
+
+════════════════════════════════════════════════════════════
+  5. OUTLIER DETECTION
+════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────
+  IQR Outlier Report — Physical Movement
+────────────────────────────────────────────────────────────
+  hip_flexion_angle                   IQR outliers:    0  |  Z>3:    0  |  Range: [-32.65, 170.68]
+  knee_flexion_angle                  IQR outliers:    0  |  Z>3:    0  |  Range: [-34.56, 214.75]
+  ankle_rotation_angle                IQR outliers:    0  |  Z>3:    0  |  Range: [-88.68, 90.52]
+  angular_velocity                    IQR outliers:    0  |  Z>3:    0  |  Range: [-2.26, 8.65]
+  linear_acceleration                 IQR outliers:    0  |  Z>3:    0  |  Range: [-7.31, 22.19]
+  ground_reaction_force               IQR outliers:    0  |  Z>3:    0  |  Range: [-958.98, 4926.68]
+  fatigue_level                       IQR outliers:    0  |  Z>3:    0  |  Range: [-0.45, 1.42]
+
+  Total IQR outlier records flagged: 0
+
+  RETENTION POLICY:
+  ─────────────────
+  Outliers are NOT automatically removed. Extreme biomechanical values
+  (e.g., high ground_reaction_force during sprinting or jumping) and
+  physiological extremes (e.g., heart_rate_bpm ~180 during intense exertion)
+  are valid representations of high-intensity athletic conditions.
+  Removing them would bias the model against detecting real injury-risk events.
+  Outliers that fall outside physical plausibility (e.g., SpO2 > 100) will be
+  capped during feature engineering if present.
+
+
+────────────────────────────────────────────────────────────
+  IQR Outlier Report — Sensor-Based
+────────────────────────────────────────────────────────────
+  heart_rate_bpm                      IQR outliers:    0  |  Z>3:    0  |  Range: [-4.94, 249.98]
+  oxygen_saturation_spo2              IQR outliers:    0  |  Z>3:    0  |  Range: [84.97, 105.13]
+  skin_temperature_celsius            IQR outliers:    0  |  Z>3:    0  |  Range: [28.84, 41.32]
+  muscle_activation_emg               IQR outliers:    0  |  Z>3:    0  |  Range: [-0.36, 1.46]
+  training_load                       IQR outliers:    0  |  Z>3:    0  |  Range: [-193.47, 737.59]
+  hydration_level                     IQR outliers:    0  |  Z>3:    0  |  Range: [-0.52, 1.54]
+  stress_index                        IQR outliers:    0  |  Z>3:    0  |  Range: [-0.53, 1.51]
+  sensor_fatigue_index                IQR outliers:    0  |  Z>3:    0  |  Range: [-0.45, 1.47]
+
+  Total IQR outlier records flagged: 0
+
+  RETENTION POLICY:
+  ─────────────────
+  Outliers are NOT automatically removed. Extreme biomechanical values
+  (e.g., high ground_reaction_force during sprinting or jumping) and
+  physiological extremes (e.g., heart_rate_bpm ~180 during intense exertion)
+  are valid representations of high-intensity athletic conditions.
+  Removing them would bias the model against detecting real injury-risk events.
+  Outliers that fall outside physical plausibility (e.g., SpO2 > 100) will be
+  capped during feature engineering if present.
+
+  Saved: outlier_boxplots_pm.png
+  Saved: outlier_boxplots_sb.png
+
+════════════════════════════════════════════════════════════
+  6. TARGET VARIABLE ANALYSIS
+════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────
+  Physical Movement – injury_risk
+────────────────────────────────────────────────────────────
+  Column : injury_risk
+  Counts :
+    Class 0:   949  ( 94.9%)  ███████████████████████████████████████████████
+    Class 1:    51  (  5.1%)  ██
+
+  Imbalance ratio (majority/minority): 18.6x  → HIGHLY IMBALANCED
+
+  Recommended strategies:
+    1. class_weight='balanced' in sklearn models
+    2. Stratified train/validation/test split (already planned)
+    3. SMOTE applied only on TRAINING data (never on test/validation)
+    4. Adjust decision threshold after training
+    5. Use F1-score / AUC-ROC as primary evaluation metric (not accuracy)
+
+
+────────────────────────────────────────────────────────────
+  Sensor-Based – injury_event
+────────────────────────────────────────────────────────────
+  Column : injury_event
+  Counts :
+    Class 0:   984  ( 98.4%)  █████████████████████████████████████████████████
+    Class 1:    16  (  1.6%)  
+
+  Imbalance ratio (majority/minority): 61.5x  → HIGHLY IMBALANCED
+
+  Recommended strategies:
+    1. class_weight='balanced' in sklearn models
+    2. Stratified train/validation/test split (already planned)
+    3. SMOTE applied only on TRAINING data (never on test/validation)
+    4. Adjust decision threshold after training
+    5. Use F1-score / AUC-ROC as primary evaluation metric (not accuracy)
+
+
+  Saved: class_distribution.png
+
+════════════════════════════════════════════════════════════
+  7. DESCRIPTIVE STATISTICS
+════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────
+  Physical Movement
+────────────────────────────────────────────────────────────
+                                    Mean     Median       Std       Min        Max        P25        P75      CV%   Skew
+hip_flexion_angle                69.0257    69.6807   29.2137   20.4632   119.9718    43.5973    94.4320     42.3  0.039
+knee_flexion_angle               90.8421    92.2481   35.0628   30.3862   149.9296    58.9289   121.2558     38.6 -0.059
+ankle_rotation_angle              0.2165     0.0553   26.1607  -44.9990    44.8039   -21.4784    23.3193  12082.6 -0.022
+angular_velocity                  3.1971     3.1635    1.5757    0.5036     5.9976     1.8305     4.5565     49.3  0.030
+linear_acceleration               7.4622     7.4695    4.2735    0.1005    14.9665     3.7501    11.1259     57.3  0.032
+ground_reaction_force          1995.3935  1971.2084  867.5844  518.5515  3498.0509  1248.1400  2719.5553     43.5  0.032
+postural_instability_index        0.4933     0.4846    0.2897    0.0014     0.9995     0.2402     0.7565     58.7  0.059
+biomechanical_deviation_score     0.4824     0.4840    0.2849    0.0002     0.9989     0.2360     0.7145     59.1  0.064
+fatigue_level                     0.4865     0.4787    0.2822    0.0002     0.9960     0.2494     0.7159     58.0  0.057
+injury_risk                       0.0510     0.0000    0.2201    0.0000     1.0000     0.0000     0.0000    431.6  4.088
+
+  Interpretation:
+  High variation (CV>50%): ['ankle_rotation_angle', 'linear_acceleration', 'postural_instability_index', 'biomechanical_deviation_score', 'fatigue_level', 'injury_risk']
+  Low variation  (CV<15%): []
+  Potentially skewed (|skew|>0.7): ['injury_risk']
+
+────────────────────────────────────────────────────────────
+  Sensor-Based
+────────────────────────────────────────────────────────────
+                              Mean    Median       Std      Min       Max       P25       P75    CV%   Skew
+heart_rate_bpm            122.0673  121.8502   38.0907  55.0071  189.9332   90.6595  154.3893   31.2  0.014
+oxygen_saturation_spo2     95.0569   95.0637    2.8645  90.0094   99.9967   92.5263   97.5670    3.0 -0.034
+skin_temperature_celsius   35.0315   34.9667    1.7770  32.0009   37.9960   33.5206   36.6420    5.1 -0.014
+muscle_activation_emg       0.5477    0.5409    0.2590   0.1011    0.9988    0.3231    0.7779   47.3  0.034
+training_load             272.1311  267.0937  132.2598  50.6001  499.4802  155.6748  388.4392   48.6  0.070
+hydration_level             0.5049    0.5010    0.2898   0.0013    0.9998    0.2547    0.7685   57.4 -0.017
+stress_index                0.4910    0.4923    0.2908   0.0003    0.9999    0.2369    0.7468   59.2 -0.008
+sensor_fatigue_index        0.5121    0.5230    0.2880   0.0003    0.9991    0.2705    0.7502   56.2 -0.063
+injury_event                0.0160    0.0000    0.1255   0.0000    1.0000    0.0000    0.0000  784.6  7.726
+
+  Interpretation:
+  High variation (CV>50%): ['hydration_level', 'stress_index', 'sensor_fatigue_index', 'injury_event']
+  Low variation  (CV<15%): ['oxygen_saturation_spo2', 'skin_temperature_celsius']
+  Potentially skewed (|skew|>0.7): ['injury_event']
+
+════════════════════════════════════════════════════════════
+  8. DISTRIBUTION ANALYSIS
+════════════════════════════════════════════════════════════
+  Saved: feature_distributions_pm.png
+  Saved: feature_distributions_sb.png
+  Saved: feature_distributions.png
+
+════════════════════════════════════════════════════════════
+  9. CORRELATION ANALYSIS
+════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────
+  Physical Movement
+────────────────────────────────────────────────────────────
+
+  Correlation with injury_risk:
+ground_reaction_force            0.2831
+fatigue_level                    0.2634
+biomechanical_deviation_score    0.2199
+postural_instability_index       0.0633
+ankle_rotation_angle             0.0208
+linear_acceleration             -0.0196
+knee_flexion_angle               0.0145
+angular_velocity                -0.0091
+hip_flexion_angle               -0.0026
+
+  Strong positive (r>0.3) : []
+  Strong negative (r<-0.3): []
+  Weak (|r|<0.1)          : ['postural_instability_index', 'ankle_rotation_angle', 'linear_acceleration', 'knee_flexion_angle', 'angular_velocity', 'hip_flexion_angle']
+
+  Potential multicollinearity (|r|>0.7 between features):
+    None detected
+
+  NOTE: Correlation measures linear association only and does not prove
+  causation. A feature with low Pearson correlation may still be a
+  valuable non-linear predictor (captured by tree-based models).
+
+  Saved: correlation_matrix_pm.png
+
+────────────────────────────────────────────────────────────
+  Sensor-Based
+────────────────────────────────────────────────────────────
+
+  Correlation with injury_event:
+heart_rate_bpm              0.1810
+muscle_activation_emg       0.1780
+sensor_fatigue_index        0.1512
+hydration_level            -0.0631
+skin_temperature_celsius   -0.0322
+training_load              -0.0194
+oxygen_saturation_spo2     -0.0183
+stress_index               -0.0135
+
+  Strong positive (r>0.3) : []
+  Strong negative (r<-0.3): []
+  Weak (|r|<0.1)          : ['hydration_level', 'skin_temperature_celsius', 'training_load', 'oxygen_saturation_spo2', 'stress_index']
+
+  Potential multicollinearity (|r|>0.7 between features):
+    None detected
+
+  NOTE: Correlation measures linear association only and does not prove
+  causation. A feature with low Pearson correlation may still be a
+  valuable non-linear predictor (captured by tree-based models).
+
+  Saved: correlation_matrix_sb.png
+  Saved: correlation_matrix.png
+
+════════════════════════════════════════════════════════════
+  10. FEATURE vs INJURY ANALYSIS
+════════════════════════════════════════════════════════════
+  Saved: feature_vs_injury_pm.png
+  Saved: feature_vs_injury_sb.png
+  Saved: feature_vs_injury.png
+
+════════════════════════════════════════════════════════════
+  11. FEATURE ENGINEERING
+════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────
+  Physical Movement – Derived Features
+────────────────────────────────────────────────────────────
+  [+] movement_intensity = angular_velocity × linear_acceleration
+      Rationale: Captures explosive movement load that elevates injury risk.
+  [+] biomechanical_risk_index = 0.5×postural_instability + 0.5×biomechanical_deviation
+      Rationale: Consolidates two deviation-from-normal metrics.
+  [+] movement_asymmetry = |hip_flexion_angle - knee_flexion_angle|
+      Rationale: Kinematic asymmetry is a known precursor of musculoskeletal injury.
+  [+] fatigue_grf_interaction = fatigue_level × ground_reaction_force
+      Rationale: Impact force combined with fatigue directly stresses joint structures.
+
+────────────────────────────────────────────────────────────
+  Sensor-Based – Derived Features
+────────────────────────────────────────────────────────────
+  [+] fatigue_adjusted_load = training_load × (1 + sensor_fatigue_index)
+      Rationale: Raw training load underestimates stress when fatigue is high.
+  [+] physiological_stress_score = 0.4×HR_norm + 0.3×(1-SpO2_norm) + 0.3×stress_index
+      Rationale: Combines cardiovascular and mental stress into one indicator.
+  [+] recovery_index = hydration_level × (1 - stress_index)
+      Rationale: Dehydrated, stressed athletes recover poorly and are more injury-prone.
+  [+] cardiovascular_load = heart_rate_bpm × training_load
+      Rationale: High training load under high heart rate signals overexertion risk.
+
+────────────────────────────────────────────────────────────
+  Updated feature lists after engineering
+────────────────────────────────────────────────────────────
+  Physical Movement features : 13
+  Sensor-Based features      : 12
+
+════════════════════════════════════════════════════════════
+  12. FEATURE SELECTION
+════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────
+  Physical Movement
+────────────────────────────────────────────────────────────
+
+  Mutual Information scores:
+fatigue_grf_interaction          0.1108
+fatigue_level                    0.0581
+ground_reaction_force            0.0524
+biomechanical_deviation_score    0.0351
+biomechanical_risk_index         0.0181
+angular_velocity                 0.0036
+movement_intensity               0.0011
+knee_flexion_angle               0.0000
+hip_flexion_angle                0.0000
+linear_acceleration              0.0000
+ankle_rotation_angle             0.0000
+postural_instability_index       0.0000
+movement_asymmetry               0.0000
+
+  Random Forest importance:
+fatigue_grf_interaction          0.3627
+ground_reaction_force            0.2073
+fatigue_level                    0.1734
+biomechanical_deviation_score    0.1526
+biomechanical_risk_index         0.0449
+ankle_rotation_angle             0.0092
+linear_acceleration              0.0090
+hip_flexion_angle                0.0085
+postural_instability_index       0.0083
+movement_asymmetry               0.0076
+angular_velocity                 0.0058
+knee_flexion_angle               0.0056
+movement_intensity               0.0051
+
+  XGBoost importance:
+fatigue_grf_interaction          0.6260
+biomechanical_deviation_score    0.1853
+ankle_rotation_angle             0.0717
+ground_reaction_force            0.0537
+hip_flexion_angle                0.0346
+fatigue_level                    0.0262
+angular_velocity                 0.0013
+knee_flexion_angle               0.0006
+movement_intensity               0.0003
+movement_asymmetry               0.0002
+linear_acceleration              0.0001
+biomechanical_risk_index         0.0000
+postural_instability_index       0.0000
+
+  Average rank (lower = more important):
+fatigue_grf_interaction           1.00
+ground_reaction_force             3.00
+biomechanical_deviation_score     3.33
+fatigue_level                     3.67
+ankle_rotation_angle              6.50
+biomechanical_risk_index          7.33
+hip_flexion_angle                 7.83
+angular_velocity                  8.00
+linear_acceleration               9.50
+movement_intensity                9.67
+knee_flexion_angle               10.17
+movement_asymmetry               10.17
+postural_instability_index       10.83
+
+  SELECTED top 10 features: ['fatigue_grf_interaction', 'ground_reaction_force', 'biomechanical_deviation_score', 'fatigue_level', 'ankle_rotation_angle', 'biomechanical_risk_index', 'hip_flexion_angle', 'angular_velocity', 'linear_acceleration', 'movement_intensity']
+  Saved: feature_importance_physical_movement.png
+
+────────────────────────────────────────────────────────────
+  Sensor-Based
+────────────────────────────────────────────────────────────
+
+  Mutual Information scores:
+sensor_fatigue_index          0.0281
+muscle_activation_emg         0.0274
+heart_rate_bpm                0.0258
+physiological_stress_score    0.0083
+hydration_level               0.0072
+recovery_index                0.0063
+cardiovascular_load           0.0011
+oxygen_saturation_spo2        0.0000
+skin_temperature_celsius      0.0000
+training_load                 0.0000
+stress_index                  0.0000
+fatigue_adjusted_load         0.0000
+
+  Random Forest importance:
+muscle_activation_emg         0.2837
+heart_rate_bpm                0.2717
+sensor_fatigue_index          0.2223
+physiological_stress_score    0.0771
+hydration_level               0.0306
+fatigue_adjusted_load         0.0250
+cardiovascular_load           0.0235
+stress_index                  0.0182
+skin_temperature_celsius      0.0144
+training_load                 0.0120
+recovery_index                0.0108
+oxygen_saturation_spo2        0.0107
+
+  XGBoost importance:
+muscle_activation_emg         0.6853
+heart_rate_bpm                0.2514
+sensor_fatigue_index          0.0622
+physiological_stress_score    0.0006
+hydration_level               0.0002
+skin_temperature_celsius      0.0001
+training_load                 0.0001
+oxygen_saturation_spo2        0.0001
+stress_index                  0.0001
+fatigue_adjusted_load         0.0000
+recovery_index                0.0000
+cardiovascular_load           0.0000
+
+  Average rank (lower = more important):
+muscle_activation_emg          1.33
+heart_rate_bpm                 2.33
+sensor_fatigue_index           2.33
+physiological_stress_score     4.00
+hydration_level                5.00
+cardiovascular_load            8.33
+skin_temperature_celsius       8.33
+fatigue_adjusted_load          9.00
+stress_index                   9.00
+training_load                  9.00
+recovery_index                 9.33
+oxygen_saturation_spo2        10.00
+
+  SELECTED top 10 features: ['muscle_activation_emg', 'heart_rate_bpm', 'sensor_fatigue_index', 'physiological_stress_score', 'hydration_level', 'cardiovascular_load', 'skin_temperature_celsius', 'fatigue_adjusted_load', 'stress_index', 'training_load']
+  Saved: feature_importance_sensor_based.png
+
+  Saved: feature_importance.png
+
+════════════════════════════════════════════════════════════
+  13. TRAIN / VALIDATION / TEST SPLIT
+════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────
+  Physical Movement
+────────────────────────────────────────────────────────────
+  Total samples : 1000
+  Train (70%)   :   700   | Injury-positive: 36
+  Val   (15%)   :   150   | Injury-positive: 8
+  Test  (15%)   :   150   | Injury-positive: 7
+
+  Stratified split used: class proportions are preserved across all splits.
+
+────────────────────────────────────────────────────────────
+  Sensor-Based
+────────────────────────────────────────────────────────────
+  Total samples : 1000
+  Train (70%)   :   700   | Injury-positive: 11
+  Val   (15%)   :   150   | Injury-positive: 3
+  Test  (15%)   :   150   | Injury-positive: 2
+
+  Stratified split used: class proportions are preserved across all splits.
+
+════════════════════════════════════════════════════════════
+  14. FEATURE SCALING
+════════════════════════════════════════════════════════════
+
+  SCALING STRATEGY:
+  ─────────────────
+  • Tree-based models (Random Forest, XGBoost, Decision Tree):
+    → Do NOT require scaling. Feature splits are based on thresholds.
+  • Distance/gradient-based models (Logistic Regression, SVM, KNN, Neural Networks):
+    → Benefit significantly from scaling. StandardScaler recommended.
+  • MinMaxScaler is useful when features need to be bounded in [0, 1]
+    (e.g., for neural network input layers).
+
+  DECISION:
+  Both scalers are fitted on TRAINING data only and applied to
+  validation/test data — no data leakage.
+
+
+────────────────────────────────────────────────────────────
+  Physical Movement
+────────────────────────────────────────────────────────────
+  StandardScaler  → mean≈0, std≈1  | Train mean sample: 0.0000
+  MinMaxScaler    → [0, 1] range   | Train min sample : 0.0000
+
+────────────────────────────────────────────────────────────
+  Sensor-Based
+────────────────────────────────────────────────────────────
+  StandardScaler  → mean≈0, std≈1  | Train mean sample: -0.0000
+  MinMaxScaler    → [0, 1] range   | Train min sample : 0.0000
+
+════════════════════════════════════════════════════════════
+  15. SAVING PROCESSED DATASETS
+════════════════════════════════════════════════════════════
+  Saved: physical_movement_clean.csv
+  Saved: sensor_data_clean.csv
+  Saved: movement train/val/test splits (X and y)
+  Saved: sensor train/val/test splits (X and y)
+  Saved: scaled variants for linear/SVM/neural network models
+
+  Saved preprocessor objects (joblib):
+    pm_standard_scaler.pkl  |  pm_minmax_scaler.pkl
+    sb_standard_scaler.pkl  |  sb_minmax_scaler.pkl
+    pm_feature_columns.pkl  |  sb_feature_columns.pkl
+
+════════════════════════════════════════════════════════════
+  16. PHASE 3 EDA REPORT
+════════════════════════════════════════════════════════════
+
+╔══════════════════════════════════════════════════════════════╗
+║        PHASE 3 — EDA & PREPROCESSING REPORT                 ║
+║        Real-Time Sports Injury Monitoring System             ║
+╚══════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  DATASET SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Physical Movement Injury Dataset
+    Rows    : 1000
+    Columns : 14  (9 original + 4 engineered = 13 features + 1 target)
+
+  Sensor-Based Injury Dataset
+    Rows    : 1000
+    Columns : 13  (8 original + 4 engineered = 12 features + 1 target)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  DATA QUALITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Missing values (both datasets)  : 0
+  Duplicate records removed       : 0
+  Infinite values                 : 0
+  Data type issues                : None
+  Constant columns                : None
+  Physically unrealistic values   : None found outside expected physiological ranges
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  CLASS DISTRIBUTION (TARGET VARIABLES)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Physical Movement — injury_risk
+    Class 0 (No Injury) :   949  (94.9%)
+    Class 1 (Injury)    :    51  (5.1%)
+    Status              : HIGHLY IMBALANCED (~19:1 ratio)
+
+  Sensor-Based — injury_event
+    Class 0 (No Injury) :   984  (98.4%)
+    Class 1 (Injury)    :    16  (1.6%)
+    Status              : HIGHLY IMBALANCED (~62:1 ratio)
+
+  → Mitigation: class_weight='balanced', stratified splits, SMOTE on train only,
+    AUC-ROC/F1 as primary evaluation metrics.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  OUTLIERS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Outliers detected via IQR method in several features.
+  RETAINED — extreme values represent genuine high-intensity sport conditions
+  (e.g., high GRF during jumping, HR near 180 bpm in sprint intervals).
+  Removing them would bias models against detecting real injury-risk events.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  IMPORTANT CORRELATIONS (with target)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Physical Movement  → features with highest linear correlation to injury_risk
+  Sensor-Based       → features with highest linear correlation to injury_event
+  Note: Tree-based models can capture non-linear relationships missed by Pearson r.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  FEATURE ENGINEERING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Physical Movement (4 new features):
+    movement_intensity          = angular_velocity × linear_acceleration
+    biomechanical_risk_index    = 0.5×postural_instability + 0.5×biomechanical_deviation
+    movement_asymmetry          = |hip_flexion_angle − knee_flexion_angle|
+    fatigue_grf_interaction     = fatigue_level × ground_reaction_force
+
+  Sensor-Based (4 new features):
+    fatigue_adjusted_load       = training_load × (1 + sensor_fatigue_index)
+    physiological_stress_score  = 0.4×HR_norm + 0.3×(1−SpO2_norm) + 0.3×stress_index
+    recovery_index              = hydration_level × (1 − stress_index)
+    cardiovascular_load         = heart_rate_bpm × training_load
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SELECTED FEATURES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Physical Movement top features (by avg rank across MI, RF, XGB):
+    ['fatigue_grf_interaction', 'ground_reaction_force', 'biomechanical_deviation_score', 'fatigue_level', 'ankle_rotation_angle', 'biomechanical_risk_index', 'hip_flexion_angle', 'angular_velocity', 'linear_acceleration', 'movement_intensity']
+
+  Sensor-Based top features:
+    ['muscle_activation_emg', 'heart_rate_bpm', 'sensor_fatigue_index', 'physiological_stress_score', 'hydration_level', 'cardiovascular_load', 'skin_temperature_celsius', 'fatigue_adjusted_load', 'stress_index', 'training_load']
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  TRAIN / VALIDATION / TEST SIZES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Physical Movement
+    Train : 700 samples  (70.0%)
+    Val   : 150 samples   (15.0%)
+    Test  : 150 samples   (15.0%)
+
+  Sensor-Based
+    Train : 700 samples  (70.0%)
+    Val   : 150 samples   (15.0%)
+    Test  : 150 samples   (15.0%)
+
+  Stratified splits ensure injury-positive class proportion is preserved.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  MULTICOLLINEARITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  No strong multicollinearity (|r| > 0.7) detected between independent
+  predictor pairs in either dataset at the original feature level.
+  Engineered composite features may carry moderate correlation with their
+  parent features — acceptable for tree-based models; monitored for linear models.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SAVED FILES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  processed/
+    physical_movement_clean.csv
+    sensor_data_clean.csv
+    X_train/val/test_movement.csv  (+ scaled variants)
+    y_train/val/test_movement.csv
+    X_train/val/test_sensor.csv    (+ scaled variants)
+    y_train/val/test_sensor.csv
+
+  models/preprocessors/
+    pm_standard_scaler.pkl   pm_minmax_scaler.pkl
+    sb_standard_scaler.pkl   sb_minmax_scaler.pkl
+    pm_feature_columns.pkl   sb_feature_columns.pkl
+
+  reports/
+    class_distribution.png
+    feature_distributions.png
+    correlation_matrix.png
+    feature_vs_injury.png
+    feature_importance.png
+    (+ additional per-dataset detail images)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PHASE 3 CONCLUSION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Both datasets are clean, complete, and free of missing or duplicate values.
+  Class imbalance is the primary challenge (≈19:1 and ≈62:1 ratios).
+
+  Physical Movement — Key injury predictors:
+    fatigue_level, ground_reaction_force, biomechanical_deviation_score,
+    postural_instability_index, knee_flexion_angle, and the engineered
+    fatigue_grf_interaction and biomechanical_risk_index features.
+
+  Sensor-Based — Key injury predictors:
+    training_load, sensor_fatigue_index, heart_rate_bpm, stress_index,
+    and the engineered fatigue_adjusted_load, cardiovascular_load, and
+    physiological_stress_score features.
+
+  The processed splits are ready for:
+    Phase 4 → Physical Movement ML Model
+              (Random Forest, XGBoost, SVM, Logistic Regression)
+    Phase 5 → Sensor-Based ML Model
+              (Same model suite, then a fusion/ensemble layer)
+
+  Preprocessing objects (scalers) are serialised so that real-time
+  inference applies identical transformations to live sensor data.
+
+═══════════════════════════════════════════════════════════════
+  RAW DATA → CLEAN DATA → EDA → FEATURE ANALYSIS
+  → FEATURE ENGINEERING → FEATURE SELECTION
+  → TRAIN / VALIDATION / TEST → READY FOR MODEL TRAINING ✓
+═══════════════════════════════════════════════════════════════
+
+
+  Full report saved → reports/phase3_eda_report.txt
+
+════════════════════════════════════════════════════════════
+  PHASE 3 COMPLETE
+════════════════════════════════════════════════════════════
+
+
+--------------------------------------------------------------------------------
+  PHASE 3 — Data Preprocessing & EDA
+  End    : 2026-09-08  18:30:55
+  Elapsed: 16.5 seconds
+  Exit   : 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+================================================================================
+  PHASE 4 — Physical Movement ML Models
+  Script : phase4_movement_model.py
+  Start  : 2026-09-08  18:30:55
+================================================================================
+================================================================================
+
+
+═════════════════════════════════════════════════════════════════
+  1. LOADING PHASE 3 PROCESSED DATASETS
+═════════════════════════════════════════════════════════════════
+  Training set   : 700 samples × 13 features
+  Validation set : 150 samples × 13 features
+  Test set       : 150 samples × 13 features
+  Feature columns: ['hip_flexion_angle', 'knee_flexion_angle', 'ankle_rotation_angle', 'angular_velocity', 'linear_acceleration', 'ground_reaction_force', 'postural_instability_index', 'biomechanical_deviation_score', 'fatigue_level', 'movement_intensity', 'biomechanical_risk_index', 'movement_asymmetry', 'fatigue_grf_interaction']
+
+─────────────────────────────────────────────────────────────────
+  Target Distribution — injury_risk
+─────────────────────────────────────────────────────────────────
+  Train   Class 0:  664 (94.9%)  Class 1:   36 ( 5.1%)
+  Val     Class 0:  142 (94.7%)  Class 1:    8 ( 5.3%)
+  Test    Class 0:  143 (95.3%)  Class 1:    7 ( 4.7%)
+
+  Training imbalance ratio: 18.4:1
+  SMOTE will be applied: True  (threshold > 5:1 — applied to training data only)
+  XGBoost scale_pos_weight: 18.44
+
+═════════════════════════════════════════════════════════════════
+  2. PREPROCESSING PIPELINES
+═════════════════════════════════════════════════════════════════
+
+  Strategy:
+  ─────────────────────────────────────────────────────────
+  • Logistic Regression, SVM
+      → SimpleImputer(median) → StandardScaler
+        (distance/gradient-based models require feature scaling)
+  • Decision Tree, Random Forest, XGBoost
+      → SimpleImputer(median) only
+        (tree splits are threshold-based; scaling not required)
+  • SMOTE (if enabled)
+      → Applied inside imbalanced-learn Pipeline AFTER imputation,
+        BEFORE the classifier. Never applied to validation/test data.
+  ─────────────────────────────────────────────────────────
+
+
+═════════════════════════════════════════════════════════════════
+  3. MODEL DEFINITIONS & HYPERPARAMETER SEARCH SPACES
+═════════════════════════════════════════════════════════════════
+
+═════════════════════════════════════════════════════════════════
+  4. TRAINING & HYPERPARAMETER TUNING  (CV on training data only)
+═════════════════════════════════════════════════════════════════
+
+─────────────────────────────────────────────────────────────────
+  Training: Logistic Regression
+─────────────────────────────────────────────────────────────────
+  Best CV F1      : 0.6796
+  Best parameters : {'clf__C': 100, 'clf__penalty': 'l2'}
+  Tuning time     : 4.9s
+
+─────────────────────────────────────────────────────────────────
+  Training: Decision Tree
+─────────────────────────────────────────────────────────────────
+  Best CV F1      : 0.9181
+  Best parameters : {'clf__criterion': 'entropy', 'clf__max_depth': 5, 'clf__min_samples_leaf': 1, 'clf__min_samples_split': 2}
+  Tuning time     : 1.0s
+
+─────────────────────────────────────────────────────────────────
+  Training: Random Forest
+─────────────────────────────────────────────────────────────────
+  Best CV F1      : 0.9407
+  Best parameters : {'clf__max_depth': 20, 'clf__max_features': 'sqrt', 'clf__min_samples_leaf': 3, 'clf__min_samples_split': 4, 'clf__n_estimators': 171}
+  Tuning time     : 15.4s
+
+─────────────────────────────────────────────────────────────────
+  Training: SVM
+─────────────────────────────────────────────────────────────────
+  Best CV F1      : 0.7396
+  Best parameters : {'clf__C': 1, 'clf__gamma': 'scale', 'clf__kernel': 'rbf'}
+  Tuning time     : 1.4s
+
+─────────────────────────────────────────────────────────────────
+  Training: XGBoost
+─────────────────────────────────────────────────────────────────
+  Best CV F1      : 0.9361
+  Best parameters : {'clf__colsample_bytree': np.float64(0.8211279907631631), 'clf__gamma': np.float64(1.4825507182389925), 'clf__learning_rate': np.float64(0.13593425693388295), 'clf__max_depth': 4, 'clf__n_estimators': 112, 'clf__reg_alpha': np.float64(0.08159418040024036), 'clf__reg_lambda': np.float64(0.5103697255479736), 'clf__subsample': np.float64(0.8511577659794545)}
+  Tuning time     : 4.5s
+
+═════════════════════════════════════════════════════════════════
+  5. MODEL EVALUATION
+═════════════════════════════════════════════════════════════════
+
+─────────────────────────────────────────────────────────────────
+  Validation Set Results
+─────────────────────────────────────────────────────────────────
+                     Accuracy  Precision  Recall      F1  ROC-AUC
+Model                                                            
+Logistic Regression    0.9267     0.4118   0.875  0.5600   0.9833
+Decision Tree          1.0000     1.0000   1.000  1.0000   1.0000
+Random Forest          1.0000     1.0000   1.000  1.0000   1.0000
+SVM                    0.9600     0.6000   0.750  0.6667   0.9842
+XGBoost                1.0000     1.0000   1.000  1.0000   1.0000
+
+─────────────────────────────────────────────────────────────────
+  Test Set Results  (final, unseen)
+─────────────────────────────────────────────────────────────────
+                     Accuracy  Precision  Recall      F1  ROC-AUC
+Model                                                            
+Logistic Regression    0.9200     0.3529  0.8571  0.5000    0.983
+Decision Tree          1.0000     1.0000  1.0000  1.0000    1.000
+Random Forest          1.0000     1.0000  1.0000  1.0000    1.000
+SVM                    0.9733     0.7143  0.7143  0.7143    0.983
+XGBoost                1.0000     1.0000  1.0000  1.0000    1.000
+
+─────────────────────────────────────────────────────────────────
+  Detailed Classification Reports — Test Set
+─────────────────────────────────────────────────────────────────
+
+  ── Logistic Regression ──
+               precision    recall  f1-score   support
+
+No Injury (0)       0.99      0.92      0.96       143
+   Injury (1)       0.35      0.86      0.50         7
+
+     accuracy                           0.92       150
+    macro avg       0.67      0.89      0.73       150
+ weighted avg       0.96      0.92      0.94       150
+
+
+  ── Decision Tree ──
+               precision    recall  f1-score   support
+
+No Injury (0)       1.00      1.00      1.00       143
+   Injury (1)       1.00      1.00      1.00         7
+
+     accuracy                           1.00       150
+    macro avg       1.00      1.00      1.00       150
+ weighted avg       1.00      1.00      1.00       150
+
+
+  ── Random Forest ──
+               precision    recall  f1-score   support
+
+No Injury (0)       1.00      1.00      1.00       143
+   Injury (1)       1.00      1.00      1.00         7
+
+     accuracy                           1.00       150
+    macro avg       1.00      1.00      1.00       150
+ weighted avg       1.00      1.00      1.00       150
+
+
+  ── SVM ──
+               precision    recall  f1-score   support
+
+No Injury (0)       0.99      0.99      0.99       143
+   Injury (1)       0.71      0.71      0.71         7
+
+     accuracy                           0.97       150
+    macro avg       0.85      0.85      0.85       150
+ weighted avg       0.97      0.97      0.97       150
+
+
+  ── XGBoost ──
+               precision    recall  f1-score   support
+
+No Injury (0)       1.00      1.00      1.00       143
+   Injury (1)       1.00      1.00      1.00         7
+
+     accuracy                           1.00       150
+    macro avg       1.00      1.00      1.00       150
+ weighted avg       1.00      1.00      1.00       150
+
+
+═════════════════════════════════════════════════════════════════
+  6. BEST MODEL SELECTION
+═════════════════════════════════════════════════════════════════
+
+  Selection criterion:
+  ─────────────────────────────────────────────────────────
+  In an injury-detection context, FALSE NEGATIVES (missing an
+  actual injury) are more costly than false positives.
+  Primary metric  → Recall (injury class)
+  Secondary metric→ F1-score, then ROC-AUC
+  Accuracy alone is misleading under class imbalance.
+  ─────────────────────────────────────────────────────────
+
+  Selection scores (Recall×0.4 + F1×0.35 + AUC×0.25):
+                     Recall      F1  ROC-AUC  selection_score
+Model                                                        
+Decision Tree         1.000  1.0000   1.0000         1.000000
+XGBoost               1.000  1.0000   1.0000         1.000000
+Random Forest         1.000  1.0000   1.0000         1.000000
+Logistic Regression   0.875  0.5600   0.9833         0.791825
+SVM                   0.750  0.6667   0.9842         0.779395
+
+  ✓ BEST MODEL: Decision Tree
+    Val  Recall: 1.0000
+    Val  F1    : 1.0000
+    Val  AUC   : 1.0000
+    Test Recall: 1.0000
+    Test F1    : 1.0000
+    Test AUC   : 1.0000
+
+═════════════════════════════════════════════════════════════════
+  7. CONFUSION MATRICES
+═════════════════════════════════════════════════════════════════
+  Saved: movement_confusion_matrix.png
+
+═════════════════════════════════════════════════════════════════
+  8. ROC CURVES
+═════════════════════════════════════════════════════════════════
+  Saved: movement_roc_curves.png
+
+═════════════════════════════════════════════════════════════════
+  9. FEATURE IMPORTANCE
+═════════════════════════════════════════════════════════════════
+  Saved: movement_feature_importance.png
+
+  Random Forest — Top 5 features:
+    fatigue_grf_interaction                  0.3455
+    ground_reaction_force                    0.2370
+    fatigue_level                            0.1794
+    biomechanical_deviation_score            0.1312
+    biomechanical_risk_index                 0.0509
+
+  XGBoost — Top 5 features:
+    fatigue_grf_interaction                  0.5484
+    ground_reaction_force                    0.2159
+    biomechanical_deviation_score            0.1055
+    fatigue_level                            0.0433
+    biomechanical_risk_index                 0.0186
+
+═════════════════════════════════════════════════════════════════
+  10. MODEL COMPARISON TABLE
+═════════════════════════════════════════════════════════════════
+                     Accuracy  Precision  Recall      F1  ROC-AUC Best_Model
+Model                                                                       
+Logistic Regression    0.9200     0.3529  0.8571  0.5000    0.983           
+Decision Tree          1.0000     1.0000  1.0000  1.0000    1.000          ★
+Random Forest          1.0000     1.0000  1.0000  1.0000    1.000           
+SVM                    0.9733     0.7143  0.7143  0.7143    0.983           
+XGBoost                1.0000     1.0000  1.0000  1.0000    1.000           
+
+  Saved: movement_model_comparison.csv
+  Saved: movement_model_comparison_table.png
+
+═════════════════════════════════════════════════════════════════
+  11. SAVING BEST MODEL & PREPROCESSING OBJECTS
+═════════════════════════════════════════════════════════════════
+  Re-fitting Decision Tree on combined train+val (850 samples) ...
+  Saved: movement_model.pkl
+  Saved: movement_preprocessor.pkl
+
+═════════════════════════════════════════════════════════════════
+  12. PREDICTION FUNCTION — predict_movement_risk()
+═════════════════════════════════════════════════════════════════
+
+─────────────────────────────────────────────────────────────────
+  Demo Prediction
+─────────────────────────────────────────────────────────────────
+  True label           : 1
+  Risk Probability     : 100.0%
+  Risk Category        : HIGH
+  Raw Probability      : 1.0
+  Model Used           : Decision Tree
+  Threshold Note       : LOW < 30% | MODERATE 30–60% | HIGH ≥ 60%  [APPLICATION-LEVEL THRESHOLDS — NOT clinically validated]
+
+─────────────────────────────────────────────────────────────────
+  Batch Demo — First 5 Test Samples
+─────────────────────────────────────────────────────────────────
+    True    Prob%    Category
+  ------------------------------
+       0     0.0%         LOW
+       0     0.0%         LOW
+       0     0.0%         LOW
+       0     0.0%         LOW
+       0     0.0%         LOW
+
+═════════════════════════════════════════════════════════════════
+  13. PHASE 7 INTEGRATION — Real-Time Camera / Pose Estimation
+═════════════════════════════════════════════════════════════════
+
+  HOW THIS MODEL RECEIVES REAL-TIME DATA IN PHASE 7
+  ─────────────────────────────────────────────────────────
+
+  PHASE 7 pipeline (Camera → Pose → Movement Model):
+
+    ┌─────────────────────────────────────────────────────┐
+    │  Camera Feed (RGB / Depth)                          │
+    │       ↓                                             │
+    │  Pose Estimation (MediaPipe / OpenPose / AlphaPose) │
+    │       ↓                                             │
+    │  Joint Landmark Extraction                          │
+    │  (hip, knee, ankle x/y/z coordinates per frame)    │
+    │       ↓                                             │
+    │  Biomechanical Feature Computation                  │
+    │  ┌──────────────────────────────────────────────┐   │
+    │  │ hip_flexion_angle  ← angle between vectors   │   │
+    │  │ knee_flexion_angle ← knee joint angle        │   │
+    │  │ ankle_rotation_angle ← foot orientation      │   │
+    │  │ angular_velocity   ← Δangle / Δtime          │   │
+    │  │ linear_acceleration ← Δposition / Δtime²     │   │
+    │  │ ground_reaction_force ← estimated from mass  │   │
+    │  │                          × acceleration      │   │
+    │  │ postural_instability_index ← centre-of-mass  │   │
+    │  │ biomechanical_deviation_score ← deviation    │   │
+    │  │                          from normative gait │   │
+    │  │ fatigue_level  ← derived from motion entropy │   │
+    │  │ + 4 engineered features from Phase 3         │   │
+    │  └──────────────────────────────────────────────┘   │
+    │       ↓                                             │
+    │  predict_movement_risk(input_data)                  │
+    │       ↓                                             │
+    │  Risk Probability % + Category (LOW/MOD/HIGH)       │
+    │       ↓                                             │
+    │  Phase 8 — Risk Fusion Engine                       │
+    └─────────────────────────────────────────────────────┘
+
+  Implementation notes for Phase 7:
+  • Load movement_model.pkl and movement_preprocessor.pkl ONCE at startup.
+  • Compute features on a rolling window (e.g., last 30 frames at 30 fps = 1s).
+  • Call predict_movement_risk() per window — not per raw frame.
+  • The pipeline's internal scaler handles normalisation automatically.
+  • No separate preprocessing step needed at inference time.
+
+
+═════════════════════════════════════════════════════════════════
+  PHASE 4 COMPLETE — SUMMARY
+═════════════════════════════════════════════════════════════════
+
+  Best Model         : Decision Tree
+  Test Recall        : 1.0000
+  Test F1            : 1.0000
+  Test ROC-AUC       : 1.0000
+
+  Saved artefacts:
+    models/movement_model.pkl
+    models/movement_preprocessor.pkl
+    reports/movement_model_comparison.csv
+    reports/movement_model_comparison_table.png
+    reports/movement_confusion_matrix.png
+    reports/movement_feature_importance.png
+    reports/movement_roc_curves.png
+
+
+--------------------------------------------------------------------------------
+  PHASE 4 — Physical Movement ML Models
+  End    : 2026-09-08  18:31:28
+  Elapsed: 33.2 seconds
+  Exit   : 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+================================================================================
+  PHASE 5 — Sensor-Based ML Models
+  Script : phase5_sensor_model.py
+  Start  : 2026-09-08  18:31:28
+================================================================================
+================================================================================
+
+
+═════════════════════════════════════════════════════════════════
+  1. LOADING PHASE 3 PROCESSED DATASETS
+═════════════════════════════════════════════════════════════════
+  Training set   : 700 samples × 12 features
+  Validation set : 150 samples × 12 features
+  Test set       : 150 samples × 12 features
+  Feature columns: ['heart_rate_bpm', 'oxygen_saturation_spo2', 'skin_temperature_celsius', 'muscle_activation_emg', 'training_load', 'hydration_level', 'stress_index', 'sensor_fatigue_index', 'fatigue_adjusted_load', 'physiological_stress_score', 'recovery_index', 'cardiovascular_load']
+
+─────────────────────────────────────────────────────────────────
+  Target Distribution — injury_event
+─────────────────────────────────────────────────────────────────
+  Train   Class 0:  689 (98.4%)  Class 1:   11 ( 1.6%)
+  Val     Class 0:  147 (98.0%)  Class 1:    3 ( 2.0%)
+  Test    Class 0:  148 (98.7%)  Class 1:    2 ( 1.3%)
+
+  Training imbalance ratio : 62.6:1
+  SMOTE will be applied    : True  (k_neighbors=5, applied to training data only)
+  XGBoost scale_pos_weight : 62.64
+
+═════════════════════════════════════════════════════════════════
+  2. PREPROCESSING PIPELINES
+═════════════════════════════════════════════════════════════════
+
+  Strategy:
+  ─────────────────────────────────────────────────────────
+  • Logistic Regression, SVM  → impute → scale → [SMOTE] → clf
+  • Decision Tree, RF, XGBoost → impute → [SMOTE] → clf
+  • SMOTE fitted ONLY on training fold (never on val/test).
+  • Calibration: CalibratedClassifierCV (isotonic) applied to
+    SVM for reliable probability estimates.
+  ─────────────────────────────────────────────────────────
+
+
+═════════════════════════════════════════════════════════════════
+  3. MODEL DEFINITIONS & HYPERPARAMETER SEARCH SPACES
+═════════════════════════════════════════════════════════════════
+
+═════════════════════════════════════════════════════════════════
+  4. TRAINING & HYPERPARAMETER TUNING  (CV on training data only)
+═════════════════════════════════════════════════════════════════
+
+─────────────────────────────────────────────────────────────────
+  Training: Logistic Regression
+─────────────────────────────────────────────────────────────────
+  Best CV F1      : 0.6867
+  Best parameters : {'clf__C': 100, 'clf__penalty': 'l2'}
+  Tuning time     : 6.4s
+
+─────────────────────────────────────────────────────────────────
+  Training: Decision Tree
+─────────────────────────────────────────────────────────────────
+  Best CV F1      : 0.6933
+  Best parameters : {'clf__criterion': 'gini', 'clf__max_depth': 3, 'clf__min_samples_leaf': 1, 'clf__min_samples_split': 2}
+  Tuning time     : 0.8s
+
+─────────────────────────────────────────────────────────────────
+  Training: Random Forest
+─────────────────────────────────────────────────────────────────
+  Best CV F1      : 0.5333
+  Best parameters : {'clf__max_depth': 20, 'clf__max_features': 'sqrt', 'clf__min_samples_leaf': 3, 'clf__min_samples_split': 4, 'clf__n_estimators': 171}
+  Tuning time     : 15.0s
+
+─────────────────────────────────────────────────────────────────
+  Training: SVM
+─────────────────────────────────────────────────────────────────
+  Best CV F1      : 0.7010
+  Best parameters : {'clf__C': 100, 'clf__gamma': 'scale', 'clf__kernel': 'linear'}
+  Tuning time     : 0.5s
+
+─────────────────────────────────────────────────────────────────
+  Training: XGBoost
+─────────────────────────────────────────────────────────────────
+  Best CV F1      : 0.9333
+  Best parameters : {'clf__colsample_bytree': np.float64(0.8650089137415928), 'clf__gamma': np.float64(1.5585553804470549), 'clf__learning_rate': np.float64(0.16602040635334325), 'clf__max_depth': 4, 'clf__n_estimators': 359, 'clf__reg_alpha': np.float64(0.18485445552552704), 'clf__reg_lambda': np.float64(2.439169255529117), 'clf__subsample': np.float64(0.9100531293444458)}
+  Tuning time     : 4.2s
+
+═════════════════════════════════════════════════════════════════
+  5. MODEL EVALUATION
+═════════════════════════════════════════════════════════════════
+
+─────────────────────────────────────────────────────────────────
+  Validation Set Results
+─────────────────────────────────────────────────────────────────
+                     Accuracy  Precision  Recall      F1  ROC-AUC
+Model                                                            
+Logistic Regression    0.9733     0.4000  0.6667  0.5000   0.9819
+Decision Tree          0.9867     1.0000  0.3333  0.5000   0.6667
+Random Forest          0.9867     1.0000  0.3333  0.5000   0.9909
+SVM                    0.9667     0.3333  0.6667  0.4444   0.9864
+XGBoost                0.9933     1.0000  0.6667  0.8000   1.0000
+
+─────────────────────────────────────────────────────────────────
+  Test Set Results  (final, unseen)
+─────────────────────────────────────────────────────────────────
+                     Accuracy  Precision  Recall      F1  ROC-AUC
+Model                                                            
+Logistic Regression    0.9800     0.4000     1.0  0.5714   0.9899
+Decision Tree          0.9933     1.0000     0.5  0.6667   0.7500
+Random Forest          0.9933     1.0000     0.5  0.6667   1.0000
+SVM                    0.9667     0.2857     1.0  0.4444   1.0000
+XGBoost                1.0000     1.0000     1.0  1.0000   1.0000
+
+─────────────────────────────────────────────────────────────────
+  Detailed Classification Reports — Test Set
+─────────────────────────────────────────────────────────────────
+
+  ── Logistic Regression ──
+                  precision    recall  f1-score   support
+
+    No Event (0)       1.00      0.98      0.99       148
+Injury Event (1)       0.40      1.00      0.57         2
+
+        accuracy                           0.98       150
+       macro avg       0.70      0.99      0.78       150
+    weighted avg       0.99      0.98      0.98       150
+
+
+  ── Decision Tree ──
+                  precision    recall  f1-score   support
+
+    No Event (0)       0.99      1.00      1.00       148
+Injury Event (1)       1.00      0.50      0.67         2
+
+        accuracy                           0.99       150
+       macro avg       1.00      0.75      0.83       150
+    weighted avg       0.99      0.99      0.99       150
+
+
+  ── Random Forest ──
+                  precision    recall  f1-score   support
+
+    No Event (0)       0.99      1.00      1.00       148
+Injury Event (1)       1.00      0.50      0.67         2
+
+        accuracy                           0.99       150
+       macro avg       1.00      0.75      0.83       150
+    weighted avg       0.99      0.99      0.99       150
+
+
+  ── SVM ──
+                  precision    recall  f1-score   support
+
+    No Event (0)       1.00      0.97      0.98       148
+Injury Event (1)       0.29      1.00      0.44         2
+
+        accuracy                           0.97       150
+       macro avg       0.64      0.98      0.71       150
+    weighted avg       0.99      0.97      0.98       150
+
+
+  ── XGBoost ──
+                  precision    recall  f1-score   support
+
+    No Event (0)       1.00      1.00      1.00       148
+Injury Event (1)       1.00      1.00      1.00         2
+
+        accuracy                           1.00       150
+       macro avg       1.00      1.00      1.00       150
+    weighted avg       1.00      1.00      1.00       150
+
+
+═════════════════════════════════════════════════════════════════
+  6. BEST MODEL SELECTION
+═════════════════════════════════════════════════════════════════
+
+  Selection criterion:
+  ─────────────────────────────────────────────────────────
+  Sensor imbalance is extreme (~62:1). A model that predicts
+  all-zero achieves 98% accuracy — useless. We prioritise:
+  Primary   → Recall   (detect every injury event possible)
+  Secondary → ROC-AUC  (ranking ability under imbalance)
+  Tertiary  → F1       (balance of precision and recall)
+  ─────────────────────────────────────────────────────────
+
+  Selection scores (Recall×0.4 + AUC×0.35 + F1×0.25):
+                     Recall  ROC-AUC      F1  selection_score
+Model                                                        
+XGBoost              0.6667   1.0000  0.8000         0.816680
+Logistic Regression  0.6667   0.9819  0.5000         0.735345
+SVM                  0.6667   0.9864  0.4444         0.723020
+Random Forest        0.3333   0.9909  0.5000         0.605135
+Decision Tree        0.3333   0.6667  0.5000         0.491665
+
+  ✓ BEST MODEL: XGBoost
+    Val  Recall : 0.6667
+    Val  AUC    : 1.0000
+    Test Recall : 1.0000
+    Test AUC    : 1.0000
+
+═════════════════════════════════════════════════════════════════
+  7. CONFUSION MATRICES
+═════════════════════════════════════════════════════════════════
+  Saved: sensor_confusion_matrix.png
+
+═════════════════════════════════════════════════════════════════
+  8. ROC CURVES
+═════════════════════════════════════════════════════════════════
+  Saved: sensor_roc_curves.png
+
+═════════════════════════════════════════════════════════════════
+  9. FEATURE IMPORTANCE
+═════════════════════════════════════════════════════════════════
+  Saved: sensor_feature_importance.png
+
+  Random Forest — Top 5 sensor features:
+    heart_rate_bpm                           0.3430
+    sensor_fatigue_index                     0.2622
+    muscle_activation_emg                    0.2163
+    physiological_stress_score               0.0816
+    cardiovascular_load                      0.0244
+
+  XGBoost — Top 5 sensor features:
+    heart_rate_bpm                           0.5909
+    muscle_activation_emg                    0.1596
+    sensor_fatigue_index                     0.1238
+    stress_index                             0.0453
+    hydration_level                          0.0419
+
+═════════════════════════════════════════════════════════════════
+  10. MODEL COMPARISON TABLE
+═════════════════════════════════════════════════════════════════
+                     Accuracy  Precision  Recall      F1  ROC-AUC Best_Model
+Model                                                                       
+Logistic Regression    0.9800     0.4000     1.0  0.5714   0.9899           
+Decision Tree          0.9933     1.0000     0.5  0.6667   0.7500           
+Random Forest          0.9933     1.0000     0.5  0.6667   1.0000           
+SVM                    0.9667     0.2857     1.0  0.4444   1.0000           
+XGBoost                1.0000     1.0000     1.0  1.0000   1.0000          ★
+
+  Saved: sensor_model_comparison.csv
+  Saved: sensor_model_comparison_table.png
+
+═════════════════════════════════════════════════════════════════
+  11. SAVING BEST MODEL & PREPROCESSING OBJECTS
+═════════════════════════════════════════════════════════════════
+  Re-fitting XGBoost on combined train+val (850 samples) ...
+  Saved: sensor_model.pkl
+  Saved: sensor_preprocessor.pkl
+
+═════════════════════════════════════════════════════════════════
+  12. PREDICTION FUNCTION — predict_sensor_risk()
+═════════════════════════════════════════════════════════════════
+
+─────────────────────────────────────────────────────────────────
+  Demo Prediction
+─────────────────────────────────────────────────────────────────
+  True label                    : 1
+  Sensor Injury Probability     : 84.87%
+  Risk Category                 : HIGH
+  Raw Probability               : 0.848663
+  Model Used                    : XGBoost
+  Threshold Note                : LOW < 30% | MODERATE 30–60% | HIGH ≥ 60%  [APPLICATION-LEVEL THRESHOLDS — NOT clinically validated]
+
+─────────────────────────────────────────────────────────────────
+  Batch Demo — First 5 Test Samples
+─────────────────────────────────────────────────────────────────
+    True    Prob%    Category
+  ------------------------------
+       0     0.1%         LOW
+       0     0.1%         LOW
+       0     0.1%         LOW
+       0     0.2%         LOW
+       0     0.1%         LOW
+
+═════════════════════════════════════════════════════════════════
+  13. PHASE 8 INTEGRATION — Risk Fusion Engine
+═════════════════════════════════════════════════════════════════
+
+  HOW THIS SENSOR MODEL FEEDS PHASE 8 (RISK FUSION ENGINE)
+  ─────────────────────────────────────────────────────────
+
+  PHASE 8 FUSION ARCHITECTURE:
+
+    ┌──────────────────────────────────────────────────────┐
+    │  PHASE 4 Output                  PHASE 5 Output      │
+    │  movement_prob (0–1)             sensor_prob (0–1)   │
+    │         │                               │            │
+    │         └──────────┬────────────────────┘            │
+    │                    ↓                                  │
+    │         FUSION STRATEGIES (Phase 8)                  │
+    │                                                       │
+    │  Option A — Weighted Average                         │
+    │    fused_prob = α × movement_prob + β × sensor_prob  │
+    │    (α + β = 1, tuned on validation data)             │
+    │                                                       │
+    │  Option B — Stacking (Meta-learner)                  │
+    │    Meta-features: [movement_prob, sensor_prob]       │
+    │    Train a Logistic Regression / XGBoost meta-model  │
+    │                                                       │
+    │  Option C — Rule-based escalation                    │
+    │    if either prob > HIGH_threshold → alert           │
+    │    if both probs > MODERATE_threshold → alert        │
+    │                                                       │
+    │  Final Output:                                        │
+    │    Fused Risk Probability: XX%                       │
+    │    Unified Risk Category: LOW / MODERATE / HIGH      │
+    │    Alert Trigger: YES / NO                           │
+    │         ↓                                            │
+    │  Coach Dashboard / Athlete Alert System              │
+    └──────────────────────────────────────────────────────┘
+
+  Key handoff contract:
+    sensor_model.pkl   → callable via predict_sensor_risk()
+    Returns: raw_probability (float, 0–1)  ← used directly by Phase 8
+    Returns: risk_category                 ← used for rule-based escalation
+
+  Additional sensor streams Phase 8 may incorporate:
+    • GPS velocity / acceleration spikes
+    • IMU-based joint load estimation
+    • Historical fatigue trend (rolling 7-day window)
+
+
+═════════════════════════════════════════════════════════════════
+  PHASE 5 COMPLETE — SUMMARY
+═════════════════════════════════════════════════════════════════
+
+  Best Model        : XGBoost
+  Test Recall       : 1.0000
+  Test F1           : 1.0000
+  Test ROC-AUC      : 1.0000
+
+  Saved artefacts:
+    models/sensor_model.pkl
+    models/sensor_preprocessor.pkl
+    reports/sensor_model_comparison.csv
+    reports/sensor_model_comparison_table.png
+    reports/sensor_confusion_matrix.png
+    reports/sensor_feature_importance.png
+    reports/sensor_roc_curves.png
+
+
+--------------------------------------------------------------------------------
+  PHASE 5 — Sensor-Based ML Models
+  End    : 2026-09-08  18:32:01
+  Elapsed: 33.2 seconds
+  Exit   : 0
+--------------------------------------------------------------------------------
+
+
+================================================================================
+================================================================================
+  PHASE 6 — MRI Image Classification (Deep Learning)
+  Script : phase6_mri_classification.py
+  Start  : 2026-09-08  18:32:01
+================================================================================
+================================================================================
+
+
+═════════════════════════════════════════════════════════════════
+  STEP 1 — DATASET INSPECTION
+═════════════════════════════════════════════════════════════════
+  Raw image directory: c:\studies\sports monitoring system\dataset\medical imaging sports data\medical imaging sports data
+  Device             : cpu
+
+  Total image files found: 56
+  Valid images          : 56
+  Corrupted / unreadable: 0
+  Duplicate images      : 3
+
+  Image dimensions:
+    Width  — min: 162, max: 371, mean: 188
+    Height — min: 75, max: 394, mean: 191
+    Unique dimension pairs: 38
+
+─────────────────────────────────────────────────────────────────
+  Label Analysis
+─────────────────────────────────────────────────────────────────
+
+  Image filenames follow the pattern: OIP (N).webp
+  There are NO embedded class labels, folder-level labels,
+  accompanying CSV/JSON annotation files, or DICOM metadata
+  in the provided dataset.
+
+  The images appear to be generic sports-medicine / MRI
+  reference images downloaded without structured labelling.
+
+  ──────────────────────────────────────────────────────
+  LABEL RELIABILITY ASSESSMENT: ✗ UNRELIABLE
+  ──────────────────────────────────────────────────────
+
+  Reason:
+    1. Filenames contain no class information (OIP (1).webp … OIP (56).webp).
+    2. No annotation file (labels.csv, annotations.json, etc.) was found.
+    3. No subfolder structure (class_A/, class_B/) exists.
+    4. 56 images is below the minimum recommended for reliable
+       transfer-learning fine-tuning even with heavy augmentation
+       (typically ≥ 100–200 images per class minimum).
+    5. Assigning synthetic labels to these images would constitute
+       data fabrication and produce a meaningless classifier.
+
+  DECISION:
+    The supervised training pipeline will NOT be executed on
+    unlabelled data. Instead:
+      (a) A complete, production-ready training pipeline is
+          implemented below — ready to run the moment labelled
+          data is supplied.
+      (b) A pseudo-label demonstration is executed using a
+          50/50 binary split (Normal vs Abnormal) purely to
+          validate that the code runs end-to-end. The demo
+          results carry NO clinical or predictive meaning.
+      (c) Clear instructions for labelling are provided.
+  ──────────────────────────────────────────────────────
+
+
+  HOW TO LABEL YOUR MRI DATASET BEFORE RERUNNING PHASE 6
+  ───────────────────────────────────────────────────────
+  Option A — Folder-based labelling (recommended):
+    Organise images into subfolders per class, e.g.:
+      dataset/mri_labelled/normal/        ← place normal MRI images here
+      dataset/mri_labelled/acl_tear/      ← place ACL-tear images here
+      dataset/mri_labelled/meniscus_tear/ ← etc.
+    Then update RAW_IMG_DIR in this script to point to mri_labelled/.
+    The pipeline will auto-detect class names from subfolder names.
+
+  Option B — CSV annotation file:
+    Create a file 'mri_labels.csv' with columns: filename, label
+    The pipeline can be adapted to read this file.
+
+  Option C — Use a publicly labelled MRI dataset:
+    • MRNet (Stanford): https://stanfordmlgroup.github.io/competitions/mrnet/
+    • KneeXrayData (Kaggle): search for knee MRI injury datasets
+    • RSNA datasets: https://www.rsna.org/education/ai-resources-and-training
+
+  Minimum recommended sample sizes per class for transfer learning:
+    Acceptable  : ≥ 50  images/class  (with aggressive augmentation)
+    Good        : ≥ 200 images/class
+    Ideal       : ≥ 500 images/class
+  ───────────────────────────────────────────────────────
+
+
+═════════════════════════════════════════════════════════════════
+  PSEUDO-LABEL DEMONSTRATION  [CODE VALIDATION ONLY — NOT REAL LABELS]
+═════════════════════════════════════════════════════════════════
+
+  ⚠ WARNING: The following section assigns SYNTHETIC pseudo-labels
+  to produce a runnable end-to-end demonstration. These labels have
+  NO medical meaning. Model metrics in this section are MEANINGLESS
+  and must NOT be interpreted as real performance results.
+
+  The code structure, pipeline, and saved artefacts ARE valid and
+  will produce meaningful results when real labelled data is used.
+
+  Total images for demo  : 56
+  Class 0 (Normal)       : 28
+  Class 1 (Abnormal)     : 28
+
+═════════════════════════════════════════════════════════════════
+  STEP 2 — DATASET ORGANISATION
+═════════════════════════════════════════════════════════════════
+  Train      : 39 images
+  Validation : 8   images
+  Test       : 9  images
+  Organised under: c:\studies\sports monitoring system\mri_dataset
+
+  NOTE: In a real dataset, if patient IDs are available, apply
+  patient-level splitting so no patient's images appear in both
+  training and test sets. This prevents data leakage at the
+  patient level (a known pitfall in medical-image research).
+
+
+═════════════════════════════════════════════════════════════════
+  STEP 3 — PREPROCESSING & AUGMENTATION
+═════════════════════════════════════════════════════════════════
+
+  Augmentation strategy:
+  ──────────────────────────────────────────────────────
+  Training augmentations (applied randomly each epoch):
+    • RandomHorizontalFlip      — anatomically valid for bilateral structures
+    • RandomRotation(±10°)      — slight orientation variance
+    • ColorJitter (brightness,  — scanner/acquisition variation simulation
+                  contrast)
+    • RandomResizedCrop         — scale/position invariance
+
+  Intentionally AVOIDED (medically unrealistic):
+    • Vertical flip             — would invert anatomy
+    • Large rotations (>15°)    — distorts joint angles
+    • Random erasing            — may remove clinically relevant regions
+
+  All splits: Resize → CenterCrop → ToTensor → Normalize(ImageNet mean/std)
+    (ImageNet normalisation is appropriate for pretrained transfer models)
+  ──────────────────────────────────────────────────────
+
+  Train batches      : 5  (39 images)
+  Validation batches : 1  (8 images)
+  Test batches       : 2  (9 images)
+  Class names        : ['Abnormal', 'Normal']
+  Class → index      : {'Abnormal': 0, 'Normal': 1}
+
+═════════════════════════════════════════════════════════════════
+  STEP 4 — MODEL ARCHITECTURES
+═════════════════════════════════════════════════════════════════
+  Models to compare: ['SimpleCNN', 'MobileNetV2', 'ResNet18', 'EfficientNet-B0']
+
+═════════════════════════════════════════════════════════════════
+  STEP 5 — TRAINING WITH EARLY STOPPING & LR SCHEDULING
+═════════════════════════════════════════════════════════════════
+
+─────────────────────────────────────────────────────────────────
+  Training: SimpleCNN
+─────────────────────────────────────────────────────────────────
+  [SimpleCNN] Epoch   1/50  Train Loss: 1.3367  Acc: 0.615  |  Val Loss: 0.6856  Acc: 0.500  LR: 0.001000
+  [SimpleCNN] Epoch   2/50  Train Loss: 1.0429  Acc: 0.513  |  Val Loss: 0.6875  Acc: 0.625  LR: 0.001000
+  [SimpleCNN] Epoch   3/50  Train Loss: 1.0298  Acc: 0.667  |  Val Loss: 1.1018  Acc: 0.500  LR: 0.001000
+  [SimpleCNN] Epoch   4/50  Train Loss: 0.8132  Acc: 0.718  |  Val Loss: 0.7859  Acc: 0.500  LR: 0.001000
+  [SimpleCNN] Epoch   5/50  Train Loss: 1.1012  Acc: 0.590  |  Val Loss: 1.1208  Acc: 0.625  LR: 0.001000
+  [SimpleCNN] Epoch   6/50  Train Loss: 1.0163  Acc: 0.615  |  Val Loss: 2.1172  Acc: 0.625  LR: 0.001000
+  [SimpleCNN] Epoch   7/50  Train Loss: 0.8532  Acc: 0.744  |  Val Loss: 2.3625  Acc: 0.625  LR: 0.001000
+  [SimpleCNN] Epoch   8/50  Train Loss: 0.9023  Acc: 0.769  |  Val Loss: 2.6103  Acc: 0.625  LR: 0.001000
+  [SimpleCNN] Epoch   9/50  Train Loss: 0.8623  Acc: 0.667  |  Val Loss: 2.5085  Acc: 0.625  LR: 0.001000
+  [SimpleCNN] Early stopping triggered at epoch 9.
+  Completed in 16.0s
+
+─────────────────────────────────────────────────────────────────
+  Training: MobileNetV2
+─────────────────────────────────────────────────────────────────
+  [MobileNetV2] Epoch   1/50  Train Loss: 0.6624  Acc: 0.692  |  Val Loss: 3.8238  Acc: 0.500  LR: 0.001000
+  [MobileNetV2] Epoch   2/50  Train Loss: 0.9722  Acc: 0.718  |  Val Loss: 1.0893  Acc: 0.750  LR: 0.001000
+  [MobileNetV2] Epoch   3/50  Train Loss: 0.8868  Acc: 0.564  |  Val Loss: 1.0355  Acc: 0.625  LR: 0.001000
+  [MobileNetV2] Epoch   4/50  Train Loss: 0.7625  Acc: 0.564  |  Val Loss: 1.0184  Acc: 0.500  LR: 0.001000
+  [MobileNetV2] Epoch   5/50  Train Loss: 0.4717  Acc: 0.821  |  Val Loss: 1.4189  Acc: 0.625  LR: 0.001000
+  [MobileNetV2] Epoch   6/50  Train Loss: 0.9425  Acc: 0.692  |  Val Loss: 1.4821  Acc: 0.500  LR: 0.001000
+  [MobileNetV2] Epoch   7/50  Train Loss: 0.4208  Acc: 0.821  |  Val Loss: 0.5674  Acc: 0.750  LR: 0.001000
+  [MobileNetV2] Epoch   8/50  Train Loss: 0.4344  Acc: 0.769  |  Val Loss: 1.0124  Acc: 0.625  LR: 0.001000
+  [MobileNetV2] Epoch   9/50  Train Loss: 0.3567  Acc: 0.872  |  Val Loss: 1.2466  Acc: 0.750  LR: 0.001000
+  [MobileNetV2] Epoch  10/50  Train Loss: 0.5438  Acc: 0.769  |  Val Loss: 0.7630  Acc: 0.875  LR: 0.000500
+  [MobileNetV2] Epoch  11/50  Train Loss: 0.4414  Acc: 0.846  |  Val Loss: 1.0231  Acc: 0.750  LR: 0.000500
+  [MobileNetV2] Epoch  12/50  Train Loss: 0.5392  Acc: 0.821  |  Val Loss: 1.5074  Acc: 0.625  LR: 0.000500
+  [MobileNetV2] Epoch  13/50  Train Loss: 0.2889  Acc: 0.846  |  Val Loss: 1.4536  Acc: 0.625  LR: 0.000500
+  [MobileNetV2] Epoch  14/50  Train Loss: 0.9850  Acc: 0.641  |  Val Loss: 1.3283  Acc: 0.625  LR: 0.000500
+  [MobileNetV2] Epoch  15/50  Train Loss: 0.2686  Acc: 0.897  |  Val Loss: 1.0623  Acc: 0.625  LR: 0.000500
+  [MobileNetV2] Early stopping triggered at epoch 15.
+  Completed in 45.7s
+
+─────────────────────────────────────────────────────────────────
+  Training: ResNet18
+─────────────────────────────────────────────────────────────────
+  [ResNet18] Epoch   1/50  Train Loss: 1.5288  Acc: 0.436  |  Val Loss: 2.0237  Acc: 0.750  LR: 0.001000
+  [ResNet18] Epoch   2/50  Train Loss: 1.7095  Acc: 0.641  |  Val Loss: 9.6996  Acc: 0.500  LR: 0.001000
+  [ResNet18] Epoch   3/50  Train Loss: 0.8928  Acc: 0.641  |  Val Loss: 55.3587  Acc: 0.500  LR: 0.001000
+  [ResNet18] Epoch   4/50  Train Loss: 1.1699  Acc: 0.667  |  Val Loss: 2.8762  Acc: 0.500  LR: 0.001000
+  [ResNet18] Epoch   5/50  Train Loss: 0.6664  Acc: 0.590  |  Val Loss: 2.0546  Acc: 0.500  LR: 0.001000
+  [ResNet18] Epoch   6/50  Train Loss: 0.4322  Acc: 0.744  |  Val Loss: 4.2971  Acc: 0.375  LR: 0.001000
+  [ResNet18] Epoch   7/50  Train Loss: 0.9501  Acc: 0.667  |  Val Loss: 5.3207  Acc: 0.500  LR: 0.001000
+  [ResNet18] Epoch   8/50  Train Loss: 0.8740  Acc: 0.641  |  Val Loss: 2.8265  Acc: 0.375  LR: 0.001000
+  [ResNet18] Epoch   9/50  Train Loss: 0.9204  Acc: 0.564  |  Val Loss: 0.8563  Acc: 0.625  LR: 0.001000
+  [ResNet18] Epoch  10/50  Train Loss: 0.5127  Acc: 0.718  |  Val Loss: 0.7131  Acc: 0.625  LR: 0.000500
+  [ResNet18] Epoch  11/50  Train Loss: 0.5265  Acc: 0.718  |  Val Loss: 0.7122  Acc: 0.625  LR: 0.000500
+  [ResNet18] Epoch  12/50  Train Loss: 0.7707  Acc: 0.744  |  Val Loss: 0.7745  Acc: 0.500  LR: 0.000500
+  [ResNet18] Epoch  13/50  Train Loss: 0.3380  Acc: 0.872  |  Val Loss: 0.9557  Acc: 0.500  LR: 0.000500
+  [ResNet18] Epoch  14/50  Train Loss: 0.4732  Acc: 0.821  |  Val Loss: 0.8307  Acc: 0.375  LR: 0.000500
+  [ResNet18] Epoch  15/50  Train Loss: 0.7294  Acc: 0.615  |  Val Loss: 1.1631  Acc: 0.500  LR: 0.000500
+  [ResNet18] Epoch  16/50  Train Loss: 0.4922  Acc: 0.718  |  Val Loss: 1.6418  Acc: 0.500  LR: 0.000500
+  [ResNet18] Epoch  17/50  Train Loss: 0.4041  Acc: 0.846  |  Val Loss: 1.5144  Acc: 0.500  LR: 0.000500
+  [ResNet18] Epoch  18/50  Train Loss: 0.3734  Acc: 0.846  |  Val Loss: 0.9810  Acc: 0.625  LR: 0.000500
+  [ResNet18] Epoch  19/50  Train Loss: 0.6364  Acc: 0.744  |  Val Loss: 1.1558  Acc: 0.500  LR: 0.000500
+  [ResNet18] Early stopping triggered at epoch 19.
+  Completed in 66.0s
+
+─────────────────────────────────────────────────────────────────
+  Training: EfficientNet-B0
+─────────────────────────────────────────────────────────────────
+  [EfficientNet-B0] Epoch   1/50  Train Loss: 0.6208  Acc: 0.692  |  Val Loss: 0.9047  Acc: 0.500  LR: 0.001000
+  [EfficientNet-B0] Epoch   2/50  Train Loss: 0.5851  Acc: 0.744  |  Val Loss: 0.9830  Acc: 0.625  LR: 0.001000
+  [EfficientNet-B0] Epoch   3/50  Train Loss: 0.2568  Acc: 0.949  |  Val Loss: 1.0369  Acc: 0.375  LR: 0.001000
+  [EfficientNet-B0] Epoch   4/50  Train Loss: 0.2624  Acc: 0.872  |  Val Loss: 1.0191  Acc: 0.500  LR: 0.001000
+  [EfficientNet-B0] Epoch   5/50  Train Loss: 0.2907  Acc: 0.897  |  Val Loss: 2.3511  Acc: 0.500  LR: 0.001000
+  [EfficientNet-B0] Epoch   6/50  Train Loss: 0.2099  Acc: 0.872  |  Val Loss: 1.4166  Acc: 0.625  LR: 0.001000
+  [EfficientNet-B0] Epoch   7/50  Train Loss: 0.1236  Acc: 0.949  |  Val Loss: 1.2926  Acc: 0.625  LR: 0.001000
+  [EfficientNet-B0] Epoch   8/50  Train Loss: 0.2218  Acc: 0.897  |  Val Loss: 1.5046  Acc: 0.750  LR: 0.001000
+  [EfficientNet-B0] Epoch   9/50  Train Loss: 0.1697  Acc: 0.949  |  Val Loss: 1.4454  Acc: 0.750  LR: 0.001000
+  [EfficientNet-B0] Early stopping triggered at epoch 9.
+  Completed in 46.3s
+
+═════════════════════════════════════════════════════════════════
+  STEP 6 — MODEL EVALUATION (Test Set)
+═════════════════════════════════════════════════════════════════
+
+  ── SimpleCNN ──
+              precision    recall  f1-score   support
+
+      Normal       0.44      1.00      0.62         4
+    Abnormal       0.00      0.00      0.00         5
+
+    accuracy                           0.44         9
+   macro avg       0.22      0.50      0.31         9
+weighted avg       0.20      0.44      0.27         9
+
+  ROC-AUC: 0.1000
+
+  ── MobileNetV2 ──
+              precision    recall  f1-score   support
+
+      Normal       0.40      0.50      0.44         4
+    Abnormal       0.50      0.40      0.44         5
+
+    accuracy                           0.44         9
+   macro avg       0.45      0.45      0.44         9
+weighted avg       0.46      0.44      0.44         9
+
+  ROC-AUC: 0.5500
+
+  ── ResNet18 ──
+              precision    recall  f1-score   support
+
+      Normal       0.33      0.25      0.29         4
+    Abnormal       0.50      0.60      0.55         5
+
+    accuracy                           0.44         9
+   macro avg       0.42      0.42      0.42         9
+weighted avg       0.43      0.44      0.43         9
+
+  ROC-AUC: 0.2500
+
+  ── EfficientNet-B0 ──
+              precision    recall  f1-score   support
+
+      Normal       0.00      0.00      0.00         4
+    Abnormal       0.56      1.00      0.71         5
+
+    accuracy                           0.56         9
+   macro avg       0.28      0.50      0.36         9
+weighted avg       0.31      0.56      0.40         9
+
+  ROC-AUC: 0.5000
+
+  Saved: mri_confusion_matrix.png
+
+─────────────────────────────────────────────────────────────────
+  Model Comparison Table
+─────────────────────────────────────────────────────────────────
+                 Accuracy  Precision  Recall      F1  ROC-AUC
+Model                                                        
+SimpleCNN          0.4444     0.0000     0.0  0.0000     0.10
+MobileNetV2        0.4444     0.5000     0.4  0.4444     0.55
+ResNet18           0.4444     0.5000     0.6  0.5455     0.25
+EfficientNet-B0    0.5556     0.5556     1.0  0.7143     0.50
+  Saved: mri_model_comparison.csv
+
+  ✓ BEST MRI MODEL: EfficientNet-B0
+
+═════════════════════════════════════════════════════════════════
+  TRAINING CURVES
+═════════════════════════════════════════════════════════════════
+  Saved: mri_training_curves.png
+
+═════════════════════════════════════════════════════════════════
+  STEP 7 — GRAD-CAM EXPLAINABILITY
+═════════════════════════════════════════════════════════════════
+
+  Grad-CAM (Gradient-weighted Class Activation Mapping) highlights
+  the image regions that most influenced the model's prediction.
+
+  !! IMPORTANT DISCLAIMER !!
+  ────────────────────────────────────────────────────────────────
+  Grad-CAM output is a model INTERPRETABILITY visualisation only.
+  It shows where the model focused — it does NOT prove that the
+  highlighted region represents a clinically meaningful lesion,
+  injury, or abnormality. Clinical validation by a qualified
+  radiologist / sports medicine physician is always required.
+  ────────────────────────────────────────────────────────────────
+
+  Saved: mri_gradcam_efficientnet_b0.png
+
+═════════════════════════════════════════════════════════════════
+  STEP 8 — SAVE MODEL & PREDICTION FUNCTION
+═════════════════════════════════════════════════════════════════
+  Saved: mri_model.pth  (model: EfficientNet-B0)
+  Saved: mri_model_meta.json
+
+─────────────────────────────────────────────────────────────────
+  Demo Inference — predict_mri()
+─────────────────────────────────────────────────────────────────
+  Image tested           : OIP (23).webp
+  Predicted Class        : Abnormal
+  Model Confidence       : 68.85%
+  Top-2 Predictions  :
+    Abnormal        68.85%
+    Normal          31.15%
+  Model Used             : EfficientNet-B0
+
+  ⚠ DISCLAIMER: This output is a model classification result, NOT a medical diagnosis. It must NOT be used as the sole basis for any clinical decision. Always consult a qualified medical professional.
+
+═════════════════════════════════════════════════════════════════
+  STEP 9 — INTEGRATION WITH THE MONITORING SYSTEM
+═════════════════════════════════════════════════════════════════
+
+  MRI MODULE — STANDALONE ACCESS ARCHITECTURE
+  ────────────────────────────────────────────────────────────────
+
+  The MRI classification module operates COMPLETELY INDEPENDENTLY
+  from the real-time camera + wearable sensor pipeline.
+
+  Standalone MRI flow:
+  ┌──────────────────────────────────────────────────────────────┐
+  │                                                              │
+  │   MRI Upload (DICOM / JPEG / PNG / WEBP)                     │
+  │         ↓                                                    │
+  │   Image Preprocessing                                        │
+  │   (Resize 224×224, Normalize with ImageNet statistics)       │
+  │         ↓                                                    │
+  │   CNN / Transfer Learning Model                              │
+  │   (Best of: SimpleCNN / MobileNetV2 / ResNet18 /             │
+  │             EfficientNet-B0)                                 │
+  │         ↓                                                    │
+  │   Classification + Confidence Score                          │
+  │   (e.g., "Abnormal — 87.3% confidence")                     │
+  │         ↓                                                    │
+  │   Optional: Grad-CAM Explainability Map                      │
+  │   (shows model attention — NOT a clinical finding)           │
+  │         ↓                                                    │
+  │   Result Display                                             │
+  │   [Predicted class | Confidence | Disclaimer]               │
+  │                                                              │
+  └──────────────────────────────────────────────────────────────┘
+
+  Separation from real-time pipeline:
+  ┌──────────────────────────────────────────────────────────────┐
+  │  REAL-TIME PIPELINE          │  MRI MODULE (SEPARATE)        │
+  │  ─────────────────────────   │  ──────────────────────────   │
+  │  Camera feed (30+ fps)       │  On-demand single image       │
+  │  Wearable sensors (live)     │  upload and classification    │
+  │  Phase 4 Movement Model      │                               │
+  │  Phase 5 Sensor Model        │  predict_mri(image_path)      │
+  │  Phase 7 Pose Estimation     │        ↓                      │
+  │  Phase 8 Risk Fusion         │  Returns class + confidence   │
+  │         ↓                    │  with mandatory disclaimer     │
+  │  Live alert dashboard        │                               │
+  └──────────────────────────────┴───────────────────────────────┘
+
+  API access (Phase 9 / deployment):
+    Expose predict_mri() as a separate REST endpoint:
+      POST /api/mri/classify
+      Body: multipart/form-data (image file)
+      Returns: JSON { predicted_class, confidence_pct, disclaimer }
+
+    Keep this endpoint isolated from:
+      POST /api/realtime/risk  ← movement + sensor pipeline
+
+
+═════════════════════════════════════════════════════════════════
+  PHASE 6 COMPLETE — SUMMARY
+═════════════════════════════════════════════════════════════════
+
+  ⚠ IMPORTANT REMINDER:
+    This run used PSEUDO-LABELS for demonstration purposes.
+    The metrics below carry NO predictive or clinical meaning.
+    Retrain this pipeline with properly labelled MRI data.
+
+  Best Demo Model   : EfficientNet-B0
+  Test Accuracy     : 0.5556  [DEMO — meaningless]
+  Test F1           : 0.7143        [DEMO — meaningless]
+  Test ROC-AUC      : 0.5000   [DEMO — meaningless]
+
+  Labelling instructions printed above. Provide labelled images and
+  re-run this script to obtain meaningful results.
+
+  Saved artefacts:
+    models/mri_model.pth
+    models/mri_model_meta.json
+    reports/mri_confusion_matrix.png
+    reports/mri_training_curves.png
+    reports/mri_model_comparison.csv
+    reports/mri_gradcam_efficientnet_b0.png
+
+
+--------------------------------------------------------------------------------
+  PHASE 6 — MRI Image Classification (Deep Learning)
+  End    : 2026-09-08  18:35:11
+  Elapsed: 190.0 seconds
+  Exit   : 0
+--------------------------------------------------------------------------------
+
+
+################################################################################
+  EXECUTION SUMMARY
+################################################################################
+
+  [OK]          PHASE 3 — Data Preprocessing & EDA
+  [OK]          PHASE 4 — Physical Movement ML Models
+  [OK]          PHASE 5 — Sensor-Based ML Models
+  [OK]          PHASE 6 — MRI Image Classification (Deep Learning)
+
+  Output file: c:\studies\sports monitoring system\reports\full_model_results.txt
+  Generated  : 2026-09-08  18:35:11
+
+################################################################################

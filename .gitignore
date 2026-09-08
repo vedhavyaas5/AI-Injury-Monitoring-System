@@ -34,5 +34,21 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Node modules — NEVER commit these
+node_modules/
+**/node_modules/
+
+# Next.js build output
+dashboard/.next/
+**/.next/
+
+# Vite
+.vite/
+**/.vite/
+
+# Logs
+logs/*.log
+*.log
+
 # Large dataset raw images are tracked (small dataset, 56 webp files)
 # Processed CSVs are tracked for reproducibility
